@@ -1,0 +1,9 @@
+{
+  "buildCommand": "cd ledgerlens-front && npm install && npm run build",
+  "outputDirectory": "ledgerlens-front/dist",
+  "framework": null,
+  "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

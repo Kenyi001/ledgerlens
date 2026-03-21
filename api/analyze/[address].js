@@ -1,0 +1,20 @@
+/**
+ * Vercel Serverless Function: GET /api/analyze/:address
+ * Wrapper para el controlador de análisis (mantiene la arquitectura modular)
+ */
+
+import "dotenv/config";
+import { analyzeAddress } from "../../src/controllers/analyze.controller.js";
+
+export default async function handler(req, res) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const path = (req.url || "").split("?")[0];
+  const segments = path.split("/").filter(Boolean);
+  const address = segments[segments.length - 1] || "";
+
+  req.params = { address };
+  await analyzeAddress(req, res);
+}
