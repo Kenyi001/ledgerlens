@@ -1,6 +1,6 @@
 /**
  * Servicio de IA: analiza el comportamiento de la billetera y clasifica (Humano vs Bot)
- * Modo dual: GenLayer (si configurado) → fallback a OpenAI.
+ * Prioridad: GenLayer (si configurado) → Hugging Face (gratis para pruebas) → OpenAI.
  */
 
 import OpenAI from "openai";
@@ -19,18 +19,75 @@ export async function analyzeWalletBehavior(statisticalSummary) {
       const { analyzeWithGenLayer } = await import("./genlayer.service.js");
       return await analyzeWithGenLayer(statisticalSummary);
     } catch (err) {
-      console.warn("[ai] GenLayer falló, usando OpenAI:", err.message);
+      console.warn("[ai] GenLayer falló, usando Hugging Face/OpenAI:", err.message);
+    }
+  }
+
+  const hfToken = process.env.HUGGINGFACE_API_KEY || process.env.HF_API_TOKEN;
+  if (hfToken) {
+    try {
+      return await analyzeWithHuggingFace(statisticalSummary, hfToken);
+    } catch (err) {
+      console.warn("[ai] Hugging Face falló, usando OpenAI:", err.message);
     }
   }
 
   return analyzeWithOpenAI(statisticalSummary);
 }
 
+async function analyzeWithHuggingFace(statisticalSummary, token) {
+  const model = process.env.HF_MODEL || "meta-llama/Llama-3.3-70B-Instruct:fireworks-ai";
+  const response = await fetch("https://router.huggingface.co/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: statisticalSummary },
+      ],
+      temperature: 0.2,
+      max_tokens: 220,
+    }),
+  });
+
+  const rawText = await response.text();
+  let data;
+  try {
+    data = rawText ? JSON.parse(rawText) : {};
+  } catch {
+    data = { raw: rawText };
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `Hugging Face error (${response.status}): ${
+        typeof data === "string" ? data : JSON.stringify(data)
+      }`
+    );
+  }
+
+  const content =
+    data?.choices?.[0]?.message?.content ||
+    data?.choices?.[0]?.text ||
+    extractHfText(data);
+  if (!content) {
+    throw new Error("Hugging Face no devolvió texto utilizable.");
+  }
+
+  const parsed = parseJsonResponse(content);
+  validateVerdict(parsed);
+  return parsed;
+}
+
 async function analyzeWithOpenAI(statisticalSummary) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error(
-      "OPENAI_API_KEY no configurada. Para GenLayer usa GENLAYER_CONTRACT_ADDRESS y GENLAYER_PRIVATE_KEY."
+      "No hay proveedor IA configurado. Usa HUGGINGFACE_API_KEY (o HF_API_TOKEN), OPENAI_API_KEY o GenLayer."
     );
   }
 
@@ -55,10 +112,29 @@ async function analyzeWithOpenAI(statisticalSummary) {
   return parsed;
 }
 
+function extractHfText(data) {
+  if (Array.isArray(data) && typeof data[0]?.generated_text === "string") {
+    return data[0].generated_text.trim();
+  }
+  if (typeof data?.generated_text === "string") {
+    return data.generated_text.trim();
+  }
+  if (Array.isArray(data) && typeof data[0]?.summary_text === "string") {
+    return data[0].summary_text.trim();
+  }
+  return "";
+}
+
 function parseJsonResponse(content) {
   let cleaned = content;
   if (cleaned.startsWith("```")) {
     cleaned = cleaned.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+  }
+  // Algunos modelos incluyen texto antes/después del JSON.
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
   }
   try {
     return JSON.parse(cleaned);
