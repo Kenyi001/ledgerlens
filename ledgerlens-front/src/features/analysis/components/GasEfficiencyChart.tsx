@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts"
-import type { GasDataPoint } from "@/lib/mockData"
+import type { GasDataPoint } from "@/lib/analysis.types"
 
 interface GasEfficiencyChartProps {
   data: GasDataPoint[]
@@ -17,9 +17,13 @@ interface GasEfficiencyChartProps {
 export function GasEfficiencyChart({ data }: GasEfficiencyChartProps) {
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-6">
-      <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
+      <h3 className="mb-1 text-sm font-semibold uppercase tracking-wider text-slate-400">
         Gas Consumption vs Network Average
       </h3>
+      <p className="mb-4 text-xs text-slate-600">
+        Estimación a partir de gas usado y precio AVAX/ETH en el servidor; puede
+        mostrar $0.00 por redondeo. Contrasta con el gas nativo en el explorador.
+      </p>
       <div className="h-[260px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>

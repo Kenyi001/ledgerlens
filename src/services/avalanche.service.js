@@ -3,16 +3,26 @@
  * Documentación: https://developers.avacloud.io/data-api/address-transactions
  */
 
-const AVALANCHE_C_CHAIN_ID = "43114";
+const SUPPORTED_CHAINS = {
+  avalanche: {
+    chainId: "43114",
+    label: "Avalanche C-Chain",
+  },
+  ethereum: {
+    chainId: "1",
+    label: "Ethereum Mainnet",
+  },
+};
 const GLACIER_BASE_URL = "https://glacier-api.avax.network";
 const DEFAULT_PAGE_SIZE = 50;
 
 /**
- * Obtiene las últimas transacciones de una dirección en Avalanche C-Chain
+ * Obtiene las últimas transacciones de una dirección en una chain EVM soportada
  * @param {string} address - Dirección de la billetera (0x...)
+ * @param {"avalanche"|"ethereum"} chain - Red a consultar en Glacier
  * @returns {Promise<Array>} Array de transacciones crudas
  */
-export async function fetchTransactions(address) {
+export async function fetchTransactions(address, chain = "avalanche") {
   const apiKey = process.env.GLACIER_API_KEY;
   if (!apiKey) {
     throw new Error(
@@ -25,7 +35,14 @@ export async function fetchTransactions(address) {
     throw new Error("Dirección inválida. Debe ser una dirección EVM (0x + 40 hex).");
   }
 
-  const url = `${GLACIER_BASE_URL}/v1/chains/${AVALANCHE_C_CHAIN_ID}/addresses/${normalizedAddress}/transactions?pageSize=${DEFAULT_PAGE_SIZE}&sortOrder=desc`;
+  const network = SUPPORTED_CHAINS[chain];
+  if (!network) {
+    throw new Error(
+      `Chain no soportada: ${chain}. Usa una de: ${Object.keys(SUPPORTED_CHAINS).join(", ")}`
+    );
+  }
+
+  const url = `${GLACIER_BASE_URL}/v1/chains/${network.chainId}/addresses/${normalizedAddress}/transactions?pageSize=${DEFAULT_PAGE_SIZE}&sortOrder=desc`;
 
   const response = await fetch(url, {
     method: "GET",
@@ -46,6 +63,10 @@ export async function fetchTransactions(address) {
   const rawTransactions = data.transactions ?? [];
 
   return rawTransactions.map(extractUsefulData);
+}
+
+export function getSupportedChains() {
+  return Object.keys(SUPPORTED_CHAINS);
 }
 
 /**

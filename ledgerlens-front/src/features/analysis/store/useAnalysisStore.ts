@@ -1,24 +1,28 @@
 import { create } from "zustand"
-import { fetchAnalysis as fetchAnalysisApi } from "@/lib/api"
-import type { AnalysisResult } from "@/lib/mockData"
+import { fetchAnalysis as fetchAnalysisApi, type SupportedChain } from "@/lib/api"
+import type { AnalysisResult } from "@/lib/analysis.types"
 
 interface AnalysisState {
   walletAddress: string
+  chain: SupportedChain
   isLoading: boolean
   analysisResult: AnalysisResult | null
   error: string | null
   setWalletAddress: (address: string) => void
+  setChain: (chain: SupportedChain) => void
   fetchAnalysis: (address: string) => void
   reset: () => void
 }
 
-export const useAnalysisStore = create<AnalysisState>((set) => ({
+export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   walletAddress: "",
+  chain: "avalanche",
   isLoading: false,
   analysisResult: null,
   error: null,
 
   setWalletAddress: (address) => set({ walletAddress: address }),
+  setChain: (chain) => set({ chain }),
 
   fetchAnalysis: async (address) => {
     const trimmed = address.trim()
@@ -27,7 +31,7 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
     set({ isLoading: true, walletAddress: trimmed, analysisResult: null, error: null })
 
     try {
-      const result = await fetchAnalysisApi(trimmed)
+      const result = await fetchAnalysisApi(trimmed, get().chain)
       set({ isLoading: false, analysisResult: result })
     } catch (err) {
       set({
@@ -38,5 +42,11 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
   },
 
   reset: () =>
-    set({ walletAddress: "", isLoading: false, analysisResult: null, error: null }),
+    set({
+      walletAddress: "",
+      chain: "avalanche",
+      isLoading: false,
+      analysisResult: null,
+      error: null,
+    }),
 }))

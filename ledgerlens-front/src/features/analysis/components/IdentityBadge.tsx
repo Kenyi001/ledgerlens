@@ -1,6 +1,6 @@
 import { Bot, User, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { AnalysisResult } from "@/lib/mockData"
+import type { AnalysisResult } from "@/lib/analysis.types"
 
 interface IdentityBadgeProps {
   result: AnalysisResult
@@ -81,9 +81,16 @@ export function IdentityBadge({ result }: IdentityBadgeProps) {
           <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
             <p className="text-sm leading-relaxed text-slate-300">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                AI Narrative — GenLayer
+                Narrativa IA
               </span>
               {result.narrative}
+            </p>
+            <p className="mt-3 border-t border-slate-800 pt-3 text-xs leading-relaxed text-slate-500">
+              <strong className="text-slate-400">Importante:</strong> identidad y
+              riesgo son <strong>inferencia de IA</strong> sobre el historial de
+              txs, no una prueba de persona física ni de intención. Si la cuenta
+              se usó en un tutorial, swaps/prácticas pueden parecer “automáticos”
+              sin ser un bot real.
             </p>
           </div>
         </div>

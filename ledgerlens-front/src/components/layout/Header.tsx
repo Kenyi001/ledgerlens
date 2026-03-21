@@ -1,22 +1,88 @@
-import { useState } from "react"
-import { Search, Loader2, Eye, Wallet } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { Search, Loader2, Eye, Wallet, LogOut, ChevronDown } from "lucide-react"
+import { useConnect, useConnection, useDisconnect, useSwitchChain } from "wagmi"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useAnalysisStore } from "@/features/analysis/store/useAnalysisStore"
+import { chainIdForApp } from "@/wagmi"
 
 export function Header() {
   const [input, setInput] = useState("")
-  const { isLoading, fetchAnalysis, reset } = useAnalysisStore()
+  const [walletMenuOpen, setWalletMenuOpen] = useState(false)
+  const walletWrapRef = useRef<HTMLDivElement>(null)
+  const { isLoading, fetchAnalysis, reset, chain, setChain } = useAnalysisStore()
+
+  const { address, status } = useConnection()
+  const { mutate: connect, connectors, isPending: isConnecting } = useConnect()
+  const { mutateAsync: disconnectAsync, isPending: isDisconnecting } =
+    useDisconnect()
+  const { switchChainAsync, isPending: isSwitching } = useSwitchChain()
+
+  const connected = status === "connected" && !!address
+
+  useEffect(() => {
+    if (address) setInput(address)
+  }, [address])
+
+  useEffect(() => {
+    if (!walletMenuOpen) return
+    const onDoc = (ev: MouseEvent) => {
+      if (
+        walletWrapRef.current &&
+        !walletWrapRef.current.contains(ev.target as Node)
+      ) {
+        setWalletMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", onDoc)
+    return () => document.removeEventListener("mousedown", onDoc)
+  }, [walletMenuOpen])
 
   const handleSearch = () => {
-    const address = input.trim()
-    if (!address) return
-    fetchAnalysis(address)
+    const addr = input.trim()
+    if (!addr) return
+    fetchAnalysis(addr)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleSearch()
   }
+
+  const handleChainSelect = (value: "avalanche" | "ethereum") => {
+    setChain(value)
+    if (!connected) return
+    const chainId = chainIdForApp[value]
+    switchChainAsync({ chainId }).catch(() => {
+      /* usuario rechazó o red no añadida */
+    })
+  }
+
+  const shortAddress = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`
+
+  /** Desconecta la sesión actual y abre el menú para elegir MetaMask u otra wallet (Core, etc.). */
+  const changeWallet = async () => {
+    try {
+      await disconnectAsync()
+    } finally {
+      setWalletMenuOpen(true)
+    }
+  }
+
+  /** Al elegir un conector nuevo: primero cortar la sesión anterior si existía (evita conflictos entre proveedores). */
+  const connectWithConnector = async (
+    connector: NonNullable<(typeof connectors)[number]>
+  ) => {
+    try {
+      if (connected) await disconnectAsync()
+    } catch {
+      /* seguir: a veces ya no hay sesión */
+    }
+    connect({ connector })
+    setWalletMenuOpen(false)
+  }
+
+  const metaMaskConnector = connectors.find((c) => c.id === "metaMask")
+  const injectedConnector = connectors.find((c) => c.id === "injected")
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl">
@@ -32,13 +98,24 @@ export function Header() {
         </button>
 
         <div className="relative flex flex-1 items-center gap-2">
+          <select
+            value={chain}
+            onChange={(e) =>
+              handleChainSelect(e.target.value as "avalanche" | "ethereum")
+            }
+            disabled={isSwitching}
+            className="h-10 rounded-md border border-slate-800 bg-slate-900/50 px-3 text-sm text-slate-200 disabled:opacity-50"
+          >
+            <option value="avalanche">Avalanche</option>
+            <option value="ethereum">Ethereum</option>
+          </select>
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Paste an Avalanche wallet address (0x...)"
+              placeholder="Paste an EVM wallet address (0x...)"
               className="h-10 border-slate-800 bg-slate-900/50 pl-10 font-mono text-sm text-slate-200 placeholder:text-slate-600 focus-visible:ring-indigo-500/40"
             />
           </div>
@@ -55,13 +132,71 @@ export function Header() {
           </Button>
         </div>
 
-        <Button
-          variant="outline"
-          className="hidden h-10 shrink-0 gap-2 border-slate-700 bg-transparent text-sm text-slate-300 hover:bg-slate-800 hover:text-slate-100 sm:inline-flex"
-        >
-          <Wallet className="h-4 w-4" />
-          Connect Wallet
-        </Button>
+        <div className="relative shrink-0" ref={walletWrapRef}>
+          {connected ? (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <span className="max-w-[140px] truncate font-mono text-xs text-slate-400">
+                {shortAddress(address!)}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isDisconnecting}
+                onClick={() => changeWallet()}
+                className="h-10 shrink-0 border-slate-700 bg-transparent text-xs text-slate-300 hover:bg-slate-800 hover:text-slate-100"
+                title="Desconectar y elegir otra wallet (MetaMask, Core, etc.)"
+              >
+                Cambiar wallet
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isDisconnecting}
+                onClick={() => disconnectAsync()}
+                className="h-10 shrink-0 gap-2 border-slate-700 bg-transparent text-sm text-slate-300 hover:bg-slate-800 hover:text-slate-100"
+              >
+                <LogOut className="h-4 w-4" />
+                Salir
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setWalletMenuOpen((o) => !o)}
+                disabled={isConnecting}
+                className="h-10 shrink-0 gap-2 border-slate-700 bg-transparent text-sm text-slate-300 hover:bg-slate-800 hover:text-slate-100"
+              >
+                <Wallet className="h-4 w-4" />
+                Connect wallet
+                <ChevronDown className="h-4 w-4 opacity-70" />
+              </Button>
+              {walletMenuOpen && (
+                <div className="absolute right-0 top-full z-[100] mt-1 min-w-[220px] rounded-md border border-slate-800 bg-slate-900 py-1 shadow-xl">
+                  {metaMaskConnector && (
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
+                      onClick={() => connectWithConnector(metaMaskConnector)}
+                    >
+                      MetaMask
+                    </button>
+                  )}
+                  {injectedConnector && (
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
+                      onClick={() => connectWithConnector(injectedConnector)}
+                    >
+                      Browser wallet (Core, etc.)
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </header>
   )

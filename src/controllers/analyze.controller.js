@@ -2,7 +2,7 @@
  * Controlador principal: orquesta Avalanche → Agregador → IA y responde al Frontend
  */
 
-import { fetchTransactions } from "../services/avalanche.service.js";
+import { fetchTransactions, getSupportedChains } from "../services/avalanche.service.js";
 import { processRawTransactions } from "../services/aggregator.service.js";
 import { analyzeWalletBehavior } from "../services/ai.service.js";
 
@@ -12,6 +12,7 @@ import { analyzeWalletBehavior } from "../services/ai.service.js";
  */
 export async function analyzeAddress(req, res) {
   const { address } = req.params;
+  const requestedChain = String(req.query.chain || "avalanche").toLowerCase();
 
   if (!address || typeof address !== "string") {
     return res.status(400).json({
@@ -28,15 +29,24 @@ export async function analyzeAddress(req, res) {
     });
   }
 
+  const supportedChains = getSupportedChains();
+  if (!supportedChains.includes(requestedChain)) {
+    return res.status(400).json({
+      error: "Chain inválida",
+      message: `Chain soportadas: ${supportedChains.join(", ")}`,
+    });
+  }
+
   try {
-    const rawTxs = await fetchTransactions(trimmed);
+    const rawTxs = await fetchTransactions(trimmed, requestedChain);
 
     if (!rawTxs || rawTxs.length === 0) {
       return res.status(200).json({
         identity: "Unknown",
         risk_score: 0,
         narrative:
-          "No se encontraron transacciones recientes para esta billetera en Avalanche C-Chain. No es posible realizar un análisis de comportamiento.",
+          `No se encontraron transacciones recientes para esta billetera en ${requestedChain}. No es posible realizar un análisis de comportamiento.`,
+        chain: requestedChain,
         transactions: [],
         gas_efficiency: [],
       });
@@ -54,6 +64,7 @@ export async function analyzeAddress(req, res) {
       identity: aiVerdict.identity,
       risk_score: aiVerdict.risk_score,
       narrative: aiVerdict.narrative,
+      chain: requestedChain,
       transactions: formattedTransactions,
       gas_efficiency: gasEfficiency,
     };

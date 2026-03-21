@@ -36,15 +36,16 @@ function EmptyState() {
           Financial Intelligence Dashboard
         </h2>
         <p className="text-sm leading-relaxed text-slate-400">
-          Paste an Avalanche wallet address above to generate an AI-powered
-          identity analysis. GenLayer will classify the wallet as Human or Bot
-          and provide a risk assessment.
+          Pega una dirección EVM y elige Avalanche o Ethereum. Los datos vienen
+          de Glacier + el backend; el análisis lo genera la IA configurada en
+          el servidor (sin datos ficticios en pantalla).
         </p>
       </div>
-      <div className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/50 px-4 py-2">
+      <div className="flex items-center gap-2 rounded-full border border-dashed border-slate-800 bg-slate-900/30 px-4 py-2">
         <Search className="h-4 w-4 text-slate-600" />
-        <span className="font-mono text-xs text-slate-600">
-          0x71C7...4E28
+        <span className="text-xs text-slate-600">
+          Ejemplo de formato:{" "}
+          <span className="font-mono text-slate-500">0x… (42 caracteres)</span>
         </span>
       </div>
     </div>
@@ -74,11 +75,11 @@ export function DashboardLayout() {
         {isLoading && (
           <div className="space-y-4">
             <p className="text-center text-sm text-slate-500">
-              Analyzing{" "}
+              Analizando{" "}
               <span className="font-mono text-indigo-400">
                 {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
               </span>{" "}
-              with GenLayer AI...
+              (API + IA)…
             </p>
             <LoadingSkeleton />
           </div>
@@ -86,18 +87,26 @@ export function DashboardLayout() {
 
         {analysisResult && !isLoading && (
           <div className="space-y-6">
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span>Showing analysis for</span>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <span>Análisis para</span>
               <code className="rounded bg-slate-900 px-2 py-0.5 font-mono text-indigo-400">
                 {walletAddress}
               </code>
+              {analysisResult.chain && (
+                <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 font-medium capitalize text-slate-300">
+                  {analysisResult.chain}
+                </span>
+              )}
             </div>
 
             <IdentityBadge result={analysisResult} />
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <GasEfficiencyChart data={analysisResult.gas_efficiency ?? []} />
-              <TransactionTable transactions={analysisResult.transactions ?? []} />
+              <TransactionTable
+                chain={analysisResult.chain}
+                transactions={analysisResult.transactions ?? []}
+              />
             </div>
           </div>
         )}

@@ -13,30 +13,83 @@ const SYSTEM_PROMPT = `Eres un auditor experto de blockchain. Analiza el siguien
  * @param {string} statisticalSummary - Resumen generado por el agregador
  * @returns {Promise<{ identity: string, risk_score: number, narrative: string }>}
  */
+/** Modelos en router.huggingface.co (formato nombre:proveedor). Se prueba el de HF_MODEL y luego respaldos. */
+const HF_MODEL_FALLBACKS = [
+  "meta-llama/Llama-3.3-70B-Instruct:fireworks-ai",
+  "meta-llama/Meta-Llama-3-8B-Instruct:fireworks-ai",
+];
+
 export async function analyzeWalletBehavior(statisticalSummary) {
+  const hfToken = process.env.HUGGINGFACE_API_KEY || process.env.HF_API_TOKEN;
+  const hasOpenAI = Boolean(process.env.OPENAI_API_KEY?.trim());
+  const hasGenLayer =
+    Boolean(process.env.GENLAYER_CONTRACT_ADDRESS?.trim()) &&
+    Boolean(process.env.GENLAYER_PRIVATE_KEY?.trim());
+
+  /** Para mostrar un error útil si todo falla y no hay OpenAI */
+  let previousFailure = null;
+
+  if (!hasGenLayer && !hfToken?.trim() && !hasOpenAI) {
+    throw new Error(
+      "No hay proveedor IA configurado. En la carpeta del backend, edita el archivo `.env` (junto a package.json) y añade al menos una de:\n\n" +
+        "  • HUGGINGFACE_API_KEY=hf_...   → token en https://huggingface.co/settings/tokens\n" +
+        "  • OPENAI_API_KEY=sk-...        → opcional como respaldo\n" +
+        "  • GenLayer: GENLAYER_CONTRACT_ADDRESS + GENLAYER_PRIVATE_KEY\n\n" +
+        "Reinicia el servidor después de guardar (`npm run dev`)."
+    );
+  }
+
   if (process.env.GENLAYER_CONTRACT_ADDRESS && process.env.GENLAYER_PRIVATE_KEY) {
     try {
       const { analyzeWithGenLayer } = await import("./genlayer.service.js");
       return await analyzeWithGenLayer(statisticalSummary);
     } catch (err) {
+      previousFailure = `GenLayer: ${err.message}`;
       console.warn("[ai] GenLayer falló, usando Hugging Face/OpenAI:", err.message);
     }
   }
 
-  const hfToken = process.env.HUGGINGFACE_API_KEY || process.env.HF_API_TOKEN;
-  if (hfToken) {
+  if (hfToken?.trim()) {
     try {
-      return await analyzeWithHuggingFace(statisticalSummary, hfToken);
+      return await analyzeWithHuggingFace(statisticalSummary, hfToken.trim());
     } catch (err) {
+      previousFailure = `Hugging Face: ${err.message}`;
       console.warn("[ai] Hugging Face falló, usando OpenAI:", err.message);
     }
   }
 
-  return analyzeWithOpenAI(statisticalSummary);
+  return analyzeWithOpenAI(statisticalSummary, previousFailure);
 }
 
+/**
+ * Prueba HF_MODEL (si existe) y luego modelos de respaldo.
+ */
 async function analyzeWithHuggingFace(statisticalSummary, token) {
-  const model = process.env.HF_MODEL || "meta-llama/Llama-3.3-70B-Instruct:fireworks-ai";
+  const envModel = process.env.HF_MODEL?.trim();
+  const orderedModels = [
+    ...(envModel ? [envModel] : []),
+    ...HF_MODEL_FALLBACKS.filter((m) => m !== envModel),
+  ];
+  const uniqueModels = [...new Set(orderedModels)];
+
+  let lastError = null;
+  for (const model of uniqueModels) {
+    try {
+      const parsed = await huggingFaceChatOnce(statisticalSummary, token, model);
+      if (uniqueModels.length > 1 && model !== uniqueModels[0]) {
+        console.warn(`[ai] Hugging Face OK con modelo de respaldo: ${model}`);
+      }
+      return parsed;
+    } catch (err) {
+      lastError = err;
+      console.warn(`[ai] HF modelo "${model}":`, err.message);
+    }
+  }
+
+  throw lastError ?? new Error("Hugging Face: ningún modelo respondió.");
+}
+
+async function huggingFaceChatOnce(statisticalSummary, token, model) {
   const response = await fetch("https://router.huggingface.co/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -63,11 +116,11 @@ async function analyzeWithHuggingFace(statisticalSummary, token) {
   }
 
   if (!response.ok) {
-    throw new Error(
-      `Hugging Face error (${response.status}): ${
-        typeof data === "string" ? data : JSON.stringify(data)
-      }`
-    );
+    const detail =
+      typeof data === "object" && data !== null
+        ? JSON.stringify(data).slice(0, 800)
+        : String(rawText).slice(0, 800);
+    throw new Error(`HTTP ${response.status} (${model}): ${detail}`);
   }
 
   const content =
@@ -75,7 +128,7 @@ async function analyzeWithHuggingFace(statisticalSummary, token) {
     data?.choices?.[0]?.text ||
     extractHfText(data);
   if (!content) {
-    throw new Error("Hugging Face no devolvió texto utilizable.");
+    throw new Error(`Sin contenido en la respuesta (${model}).`);
   }
 
   const parsed = parseJsonResponse(content);
@@ -83,11 +136,20 @@ async function analyzeWithHuggingFace(statisticalSummary, token) {
   return parsed;
 }
 
-async function analyzeWithOpenAI(statisticalSummary) {
-  const apiKey = process.env.OPENAI_API_KEY;
+async function analyzeWithOpenAI(statisticalSummary, previousFailure = null) {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
+    const hint =
+      "\n\nQué revisar:\n" +
+      "  • Token HF con permiso de lectura: https://huggingface.co/settings/tokens\n" +
+      "  • Acepta las condiciones del modelo en la página del modelo en Hugging Face (si pide).\n" +
+      "  • Prueba a comentar HF_MODEL en `.env` para usar los modelos por defecto del código.\n" +
+      "  • O añade OPENAI_API_KEY=sk-... como respaldo.\n";
+    const detail = previousFailure ? `\nDetalle: ${previousFailure}` : "";
     throw new Error(
-      "No hay proveedor IA configurado. Usa HUGGINGFACE_API_KEY (o HF_API_TOKEN), OPENAI_API_KEY o GenLayer."
+      "Hugging Face (y/o GenLayer) falló y no hay OPENAI_API_KEY en `.env`." +
+        detail +
+        hint
     );
   }
 
