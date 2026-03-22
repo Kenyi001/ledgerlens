@@ -62,7 +62,7 @@ Ver **[HACKATHON_GENLAYER_REQS.md](./HACKATHON_GENLAYER_REQS.md)** para cumplimi
 | Avalanche C-Chain | ✅ Chain 43114 | [build.avax.network](https://build.avax.network/) |
 | GenLayer StudioNet | ✅ IA on-chain (actual) | [studio.genlayer.com](https://studio.genlayer.com) |
 | GenLayer Testnet Bradbury | ⚠️ Pendiente faucet | [portal.genlayer.foundation](https://portal.genlayer.foundation/) |
-| x402 (HTTP payment) | ❌ No implementado | [Workshop](https://x.com/alephhackathon/status/2034729201560096780) |
+| x402 (HTTP payment) | ✅ Backend + Frontend (wrapFetchWithPayment, PayAI) | [X402.md](./X402.md) |
 
 ---
 

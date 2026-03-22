@@ -48,7 +48,7 @@ export function MoneyFlowChart({ data }: MoneyFlowChartProps) {
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
               data={chartData}
-              margin={{ top: 10, right: 10, left: 5, bottom: 15 }}
+              margin={{ top: 10, right: 10, left: 5, bottom: 50 }}
             >
               <defs>
                 <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
@@ -64,8 +64,8 @@ export function MoneyFlowChart({ data }: MoneyFlowChartProps) {
               <XAxis
                 dataKey="label"
                 stroke="#475569"
-                tick={{ fill: "#94a3b8", fontSize: 10 }}
-                interval={chartData.length > 12 ? Math.max(0, Math.floor(chartData.length / 6) - 1) : 0}
+                tick={{ fill: "#94a3b8", fontSize: 9, angle: -35, textAnchor: "end" }}
+                interval={chartData.length > 8 ? Math.max(0, Math.floor(chartData.length / 5) - 1) : 0}
               />
               <YAxis
                 stroke="#475569"
@@ -79,8 +79,19 @@ export function MoneyFlowChart({ data }: MoneyFlowChartProps) {
                   borderRadius: "8px",
                   color: "#e2e8f0",
                 }}
-                formatter={(value, name) => [`$${Number(value ?? 0).toFixed(2)}`, name === "income_usd" ? "Ingresos" : "Gastos"]}
-                labelFormatter={(label) => `Fecha: ${label}`}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null
+                  const row = payload[0]?.payload as { income_usd?: number; expense_usd?: number } | undefined
+                  const income = Number(row?.income_usd ?? 0)
+                  const expense = Number(row?.expense_usd ?? 0)
+                  return (
+                    <div className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs shadow-xl">
+                      <p className="mb-2 font-medium text-slate-300">Fecha: {label}</p>
+                      <p className="text-emerald-400">Ingresos: ${income.toFixed(2)} USD</p>
+                      <p className="text-rose-400">Gastos: ${expense.toFixed(2)} USD</p>
+                    </div>
+                  )
+                }}
               />
               <Legend wrapperStyle={{ color: "#94a3b8", fontSize: "12px" }} />
               <Bar dataKey="income_usd" name="Ingresos" fill="#10b981" radius={[2, 2, 0, 0]} />

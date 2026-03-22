@@ -7,6 +7,7 @@ import { MoneyFlowChart } from "@/features/analysis/components/MoneyFlowChart"
 import { TransactionTable } from "@/features/analysis/components/TransactionTable"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Search, Eye, Wallet, Download, CreditCard } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { useConnection } from "wagmi"
 
 
@@ -102,32 +103,52 @@ function WalletStatsSummary({
   const { current_balance_native, total_received_usd, total_sent_usd, total_gas_spent_usd } = result.wallet_summary;
   const symbol = result.chain === "ethereum" ? "ETH" : "AVAX";
 
+  const volumeUsd = (total_received_usd || 0) + (total_sent_usd || 0)
+  const netFlowUsd = (total_received_usd || 0) - (total_sent_usd || 0)
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 rounded-xl border border-slate-800 bg-slate-900/30 p-4">
-      <div className="flex flex-col gap-1">
-        <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Lo que hay (Balance actual)</span>
-        <span className="text-xl text-slate-200 font-bold">
-          {current_balance_native.toFixed(4)} {symbol}
-        </span>
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 rounded-xl border border-slate-800 bg-slate-900/30 p-4">
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Lo que hay (Balance actual)</span>
+          <span className="text-xl text-slate-200 font-bold">
+            {current_balance_native.toFixed(4)} {symbol}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1 border-t sm:border-t-0 sm:border-l border-slate-800 sm:pl-4 pt-3 sm:pt-0">
+          <span className="text-xs text-emerald-500/80 uppercase tracking-wider font-semibold">Lo que recibí (USD aprox)</span>
+          <span className="text-xl text-emerald-400 font-bold">
+            ${total_received_usd.toFixed(2)}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1 border-t sm:border-t-0 sm:border-l border-slate-800 sm:pl-4 pt-3 sm:pt-0">
+          <span className="text-xs text-rose-500/80 uppercase tracking-wider font-semibold">Lo que envié (USD aprox)</span>
+          <span className="text-xl text-rose-400 font-bold">
+            ${total_sent_usd.toFixed(2)}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1 border-t sm:border-t-0 sm:border-l border-slate-800 sm:pl-4 pt-3 sm:pt-0">
+          <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Gas Gastado (Real)</span>
+          <span className="text-xl text-slate-300 font-bold">
+            ${(total_gas_spent_usd || 0).toFixed(2)}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1 border-t sm:border-t-0 sm:border-l border-slate-800 sm:pl-4 pt-3 sm:pt-0">
+          <span className="text-xs text-indigo-400/80 uppercase tracking-wider font-semibold">Fondos estimados (USD)</span>
+          <span className={cn(
+            "text-xl font-bold",
+            netFlowUsd >= 0 ? "text-emerald-400" : "text-rose-400"
+          )}>
+            {netFlowUsd >= 0 ? "+" : ""}${netFlowUsd.toFixed(2)}
+          </span>
+          <span className="text-[10px] text-slate-500 mt-0.5">
+            Flujo neto (recibido − enviado). Volumen total: ${volumeUsd.toFixed(2)} USD.
+          </span>
+        </div>
       </div>
-      <div className="flex flex-col gap-1 border-t sm:border-t-0 sm:border-l border-slate-800 sm:pl-4 pt-3 sm:pt-0">
-        <span className="text-xs text-emerald-500/80 uppercase tracking-wider font-semibold">Lo que recibí (USD aprox)</span>
-        <span className="text-xl text-emerald-400 font-bold">
-          ${total_received_usd.toFixed(2)}
-        </span>
-      </div>
-      <div className="flex flex-col gap-1 border-t sm:border-t-0 sm:border-l border-slate-800 sm:pl-4 pt-3 sm:pt-0">
-        <span className="text-xs text-rose-500/80 uppercase tracking-wider font-semibold">Lo que envié (USD aprox)</span>
-        <span className="text-xl text-rose-400 font-bold">
-          ${total_sent_usd.toFixed(2)}
-        </span>
-      </div>
-      <div className="flex flex-col gap-1 border-t sm:border-t-0 sm:border-l border-slate-800 sm:pl-4 pt-3 sm:pt-0">
-        <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Gas Gastado (Real)</span>
-        <span className="text-xl text-slate-300 font-bold">
-          ${(total_gas_spent_usd || 0).toFixed(2)}
-        </span>
-      </div>
+      <p className="text-xs text-slate-500">
+        <strong className="text-slate-400">Volumen estimado:</strong> Transacciones legítimas (recibido + enviado) = <strong className="text-slate-300">${volumeUsd.toFixed(2)} USD</strong>. Las marcadas como sospechosas no se incluyen.
+      </p>
     </div>
   )
 }

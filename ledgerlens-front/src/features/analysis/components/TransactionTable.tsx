@@ -4,8 +4,9 @@ import {
   ArrowUpRight,
   CircleDot,
   ExternalLink,
+  Info,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, normalizeToLatin } from "@/lib/utils"
 import type { Transaction } from "@/lib/analysis.types"
 import { getExplorerTxUrl } from "@/lib/explorer"
 
@@ -27,13 +28,13 @@ function activityPrimaryLine(t: Transaction): string {
   const flow = t.flow ?? "neutral"
   const hasTok =
     t.token_amount != null && t.token_amount > 0 && t.token_symbol
-  const sym = hasTok ? t.token_symbol : t.native_symbol ?? "AVAX"
+  const sym = normalizeToLatin(hasTok ? t.token_symbol! : t.native_symbol ?? "AVAX")
   const amt = hasTok ? (t.token_amount ?? 0) : t.value_native ?? 0
   const hasAmount =
     hasTok || (t.value_native != null && Math.abs(t.value_native) > 1e-18)
 
   if (!hasAmount || flow === "neutral") {
-    const a = t.action
+    const a = normalizeToLatin(t.action)
     return a.length > 56 ? `${a.slice(0, 55)}…` : a
   }
 
@@ -162,6 +163,44 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
   )
 }
 
+function ScamBadge({ reason }: { reason: string | null | undefined }) {
+  const [show, setShow] = useState(false)
+  const isCyrillic = reason === "cyrillic_token" || reason === "cyrillic_action"
+  const explain =
+    reason === "cyrillic_token"
+      ? "Token con caracteres cirílicos que imitan USDC/AVAX (ej. UЅDС en vez de USDC). Técnica de dusting/phishing: envían cantidades mínimas a muchas wallets. Excluido del volumen."
+      : reason === "cyrillic_action"
+        ? "Etiqueta con caracteres sospechosos (posible phishing). Excluido del volumen."
+        : reason === "zero_value"
+          ? "Transferencia sin valor (fallida, spam o dust). No necesariamente estafa. Excluido del volumen."
+          : "Posible actividad sospechosa. Excluido del volumen."
+
+  const label = isCyrillic ? "ESTAFA" : reason === "zero_value" ? "SIN VALOR" : "SCAM"
+
+  return (
+    <span
+      className="relative inline-flex items-center gap-1"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      <span
+        className={cn(
+          "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide cursor-help",
+          reason === "zero_value" ? "bg-amber-950/50 text-amber-400" : "bg-orange-950/50 text-orange-400"
+        )}
+      >
+        {label}
+      </span>
+      <Info className="h-3 w-3 shrink-0 text-slate-500 cursor-help" aria-hidden />
+      {show && (
+        <div className="absolute left-0 top-full z-50 mt-1 max-w-[280px] rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 shadow-xl">
+          {explain}
+        </div>
+      )}
+    </span>
+  )
+}
+
 function ActivityRow({ tx, chain }: { tx: Transaction; chain?: string }) {
   const flow = tx.flow ?? "neutral"
   const title = activityPrimaryLine(tx)
@@ -236,29 +275,7 @@ function ActivityRow({ tx, chain }: { tx: Transaction; chain?: string }) {
               </span>
             )}
             {tx.is_scam && (
-              <span
-                className={cn(
-                  "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                  tx.scam_reason === "zero_value"
-                    ? "bg-amber-950/50 text-amber-400"
-                    : "bg-orange-950/50 text-orange-400"
-                )}
-                title={
-                  tx.scam_reason === "cyrillic_token"
-                    ? "Token con caracteres sospechosos (posible estafa)"
-                    : tx.scam_reason === "cyrillic_action"
-                      ? "Etiqueta con caracteres sospechosos (posible estafa)"
-                      : tx.scam_reason === "zero_value"
-                        ? "Transferencia sin valor (fallida, spam o dust)"
-                        : "Posible actividad sospechosa"
-                }
-              >
-                {tx.scam_reason === "cyrillic_token" || tx.scam_reason === "cyrillic_action"
-                  ? "ESTAFA"
-                  : tx.scam_reason === "zero_value"
-                    ? "SIN VALOR"
-                    : "SCAM"}
-              </span>
+              <ScamBadge reason={tx.scam_reason} />
             )}
           </div>
           {usd != null && (

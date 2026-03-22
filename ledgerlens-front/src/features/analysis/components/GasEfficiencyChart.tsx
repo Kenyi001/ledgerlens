@@ -59,7 +59,7 @@ export function GasEfficiencyChart({ data, chain = "avalanche" }: GasEfficiencyC
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={plotData}
-            margin={{ top: 10, right: 10, left: 5, bottom: 15 }}
+            margin={{ top: 10, right: 10, left: 5, bottom: 50 }}
           >
             <defs>
               <linearGradient id="gasGradient" x1="0" y1="0" x2="0" y2="1">
@@ -71,8 +71,8 @@ export function GasEfficiencyChart({ data, chain = "avalanche" }: GasEfficiencyC
             <XAxis
               dataKey="xKey"
               stroke="#475569"
-              tick={{ fill: "#94a3b8", fontSize: 10 }}
-              interval={plotData.length > 12 ? Math.max(0, Math.floor(plotData.length / 6) - 1) : 0}
+              tick={{ fill: "#94a3b8", fontSize: 9, angle: -35, textAnchor: "end" }}
+              interval={plotData.length > 8 ? Math.max(0, Math.floor(plotData.length / 5) - 1) : 0}
             />
             <YAxis
               stroke="#475569"

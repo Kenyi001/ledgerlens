@@ -1,64 +1,86 @@
-# Prisma
+# Prisma — Financial Intelligence on Chain
 
-> **Analizador financiero on-chain** para billeteras Avalanche y Ethereum. Extrae transacciones, clasifica **Humano vs Bot** con IA y ofrece dashboards de ingresos, gastos y gas.
->
-> **Aleph Hackathon 2026**
+> **Analizador financiero on-chain** para billeteras Avalanche y Ethereum. Extrae transacciones vía Glacier, clasifica **Humano vs Bot** con IA (GenLayer/Hugging Face), detecta posibles estafas (dusting, caracteres cirílicos) y ofrece dashboards de ingresos, gastos, gas y export PDF.
 
-→ [HACKATHON.md](./HACKATHON.md) · [CHECKLIST.md](./CHECKLIST.md) · [SCAM_DETECTION.md](./SCAM_DETECTION.md) · [X402.md](./X402.md) · [GENLAYER.md](./GENLAYER.md)
+**Aleph Hackathon 2026**
 
 ---
 
-## Para jurados y calificadores
+## 🔗 Enlaces
 
-Este documento resume el **stack tecnológico**, cómo se usaron las **tecnologías de cada pool de premios** y qué se implementó correctamente.
+| Recurso | URL |
+|---------|-----|
+| **Repositorio** | [github.com/Kenyi001/ledgerlens](https://github.com/Kenyi001/ledgerlens) |
+| **Live Demo (Vercel)** | `https://[tu-proyecto].vercel.app` — tras desplegar desde el repo |
+| **Documentación** | [HACKATHON.md](./HACKATHON.md) · [X402.md](./X402.md) · [GENLAYER.md](./GENLAYER.md) · [CHECKLIST.md](./CHECKLIST.md) |
 
-### Tracks / Pools de premios
+---
 
-| Track | Tecnologías requeridas | Uso en Prisma |
-|-------|------------------------|---------------|
-| **Avalanche** | Glacier API, C-Chain, build.avax.network | ✅ Glacier API como fuente de datos on-chain; soporte Avalanche C-Chain (43114) y Fuji (43113); enlaces a Snowtrace |
-| **GenLayer** | Intelligent Contracts, Testnet Bradbury, consenso LLM | ✅ Contrato desplegado en Bradbury; IA descentralizada con fallback a OpenAI/Hugging Face |
-| **x402** | HTTP 402, pago USDC, Avalanche | ✅ Middleware x402 en backend; pago USDC vía PayAI en Fuji/C-Chain; cliente frontend con wrapFetchWithPayment |
+## Stack tecnológico (dónde se usa cada cosa)
 
-### Stack tecnológico completo
-
-| Capa | Tecnología | Versión / Uso |
+| Capa | Tecnología | Archivo / Uso |
 |------|------------|---------------|
-| **Frontend** | React 19, Vite 8, TypeScript, Tailwind 4 | SPA con HMR |
-| **Estado / Wallet** | wagmi 3, viem 2 | Conexión MetaMask, Core; chains Avalanche, Fuji, Ethereum |
-| **Gráficos** | Recharts | Dashboards de ingresos/gastos, gas |
-| **Backend** | Node.js, Express, ES Modules | API REST; serverless en Vercel |
-| **L1 Datos** | Avalanche Glacier API | Transacciones, balances; Avalanche + Ethereum |
-| **IA** | Hugging Face, OpenAI, GenLayer | Clasificación Humano/Bot; consenso LLM vía GenLayer |
-| **Pagos API** | x402, @x402/core, @x402/express, @x402/evm, PayAI | Cobro USDC opcional por análisis |
-| **GenLayer** | genlayer-js | Intelligent Contract en Bradbury |
-
-### Qué se implementó correctamente
-
-1. **Avalanche Glacier API**: Integración completa; transacciones, ERC-20, método de llamada; soporte C-Chain y Fuji.
-2. **GenLayer**: Contrato desplegado; consenso optimista; fallback a proveedores centralizados si falla.
-3. **x402**: Backend con middleware de pago; frontend con cliente x402; pago USDC en Avalanche.
-4. **Detección de scam**: Heurísticas (cirílico, transferencias sin valor); clasificación por tipo; documentado en SCAM_DETECTION.md.
-5. **Dashboard financiero**: Ingresos/gastos en el tiempo; gas en el tiempo; tipo de cuenta destino (DEX, Bridge, Wallet, Contrato).
-6. **Export PDF**: Reporte descargable con clasificación, narrativa y transacciones.
-7. **Wallet connect**: MetaMask y injected; uso de useConnectors (wagmi v3).
+| **Frontend** | React 19, Vite 8, TypeScript, Tailwind 4 | `ledgerlens-front/` — SPA, HMR |
+| **Estado / Wallet** | wagmi 3, viem 2 | `ledgerlens-front/src/wagmi.ts`, Header, useRunAnalysis |
+| **Gráficos** | Recharts | `MoneyFlowChart.tsx`, `GasEfficiencyChart.tsx` |
+| **Backend** | Node.js, Express, ES Modules | `src/` — API REST; serverless en Vercel |
+| **Datos on-chain** | Avalanche Glacier API | `src/services/avalanche.service.js` — transacciones, balances |
+| **IA** | Hugging Face, OpenAI, GenLayer | `src/services/ai.service.js` — clasificación Humano/Bot |
+| **Pagos API** | x402, @x402/core, @x402/express, @x402/evm, PayAI | Backend: middleware; Frontend: wrapFetchWithPayment |
+| **GenLayer** | genlayer-js | `src/services/genlayer.service.js`, `contracts/wallet_analyzer.py` |
+| **Export PDF** | jsPDF, jspdf-autotable | `ledgerlens-front/src/lib/exportReport.ts` |
 
 ---
 
-## Stack (resumen)
+## Dónde está el pago x402 en el frontend
 
-| Capa | Tecnología |
-|------|------------|
-| Frontend | React 19 + Vite + TypeScript + Tailwind + wagmi + Recharts |
-| Backend | Node.js + Express + ES Modules + Vercel Serverless |
-| L1 Datos | Avalanche Glacier API (C-Chain + Ethereum) |
-| IA | Hugging Face → OpenAI → GenLayer (fallback) |
-| Wallet | MetaMask / Core (Avalanche + Ethereum) |
-| Pagos API | x402 + PayAI facilitator (Avalanche Fuji / C-Chain) |
+El flujo x402 **sí está implementado** en el frontend. Se aplica cuando:
 
-### Built for Avalanche
+1. **Backend** tiene `X402_ENABLED=true` → la ruta `/api/analyze/:address` devuelve **402 Payment Required** si no hay pago.
+2. **Usuario** tiene wallet conectada (MetaMask, Core, etc.).
 
-Prisma usa **Glacier** para datos, **Avalanche C-Chain / Fuji** para análisis, y **x402** para cobro opcional en USDC. Ver [X402.md](./X402.md) y [GENLAYER.md](./GENLAYER.md).
+### Archivos del frontend involucrados
+
+| Archivo | Líneas / Función |
+|---------|------------------|
+| `ledgerlens-front/src/lib/api.ts` | 85–113: si hay `walletClient`, usa `wrapFetchWithPayment` y `ExactEvmScheme` para firmar EIP-3009 y pagar USDC al recibir 402 |
+| `ledgerlens-front/src/features/analysis/hooks/useRunAnalysis.ts` | 25–36: con wallet conectada, cambia a Fuji/C-Chain (red de cobro) y pasa `walletClient` a `fetchAnalysis` |
+| `ledgerlens-front/src/components/layout/DashboardLayout.tsx` | Muestra badge "x402 · Pago USDC" + enlace al hash cuando existe `payment_tx_hash` |
+| `ledgerlens-front/src/features/analysis/store/useAnalysisStore.ts` | 37–38: pasa `walletClient` a `fetchAnalysisApi` |
+
+### Flujo resumido
+
+```
+Usuario conecta wallet → useRunAnalysis pasa walletClient → fetchAnalysis (api.ts)
+  → wrapFetchWithPayment intercepta 402
+  → ExactEvmScheme firma EIP-3009 con USDC
+  → Reintenta la petición con PAYMENT-SIGNATURE
+  → Backend valida → 200 + PAYMENT-RESPONSE (tx hash)
+  → Dashboard muestra "x402 · Pago USDC"
+```
+
+Si `X402_ENABLED` no está en `true` en el backend, el análisis es gratuito y no se usa pago.
+
+---
+
+## Contratos y datos utilizados
+
+### Contrato GenLayer: `contracts/wallet_analyzer.py`
+
+- **Función principal:** `analyze_wallet(statistical_summary)` — escribe; llama al LLM con consenso.
+- **Lectura:** `get_last_verdict()` — devuelve `{ identity, risk_score, narrative }`.
+- **Red:** StudioNet (desarrollo) o Testnet Bradbury (producción).
+- **Dirección (ejemplo):** `GENLAYER_CONTRACT_ADDRESS` en `.env`.
+
+### Contratos x402 (externos)
+
+- **PayAI Facilitator:** liquidación USDC.
+- **USDC:** Avalanche C-Chain (43114) o Fuji (43113), según `X402_NETWORK`.
+
+### Glacier API
+
+- **Fuente:** [AvaCloud](https://app.avacloud.io/) — transacciones, ERC-20, método de llamada.
+- **Chains:** Avalanche C-Chain (43114), Fuji (43113), Ethereum (1).
 
 ---
 
@@ -72,6 +94,7 @@ Prisma usa **Glacier** para datos, **Avalanche C-Chain / Fuji** para análisis, 
 | `GENLAYER_CONTRACT_ADDRESS` | GenLayer | Dirección del contrato |
 | `X402_ENABLED`, `X402_PAY_TO`, `X402_NETWORK` | x402 | Cobro por API en USDC |
 | `AVAX_USD_PRICE` | No | Precio AVAX para cálculos USD |
+| `VITE_X402_NETWORK` | Frontend | Red de pago (`fuji` o `mainnet`) |
 
 ---
 
@@ -87,12 +110,16 @@ cd ledgerlens-front && npm install && npm run dev   # http://localhost:5173
 
 ---
 
-## Despliegue (Vercel)
+## Despliegue en Vercel
 
-1. Conecta el repo de GitHub a Vercel.
+1. Conecta el repo [github.com/Kenyi001/ledgerlens](https://github.com/Kenyi001/ledgerlens) a Vercel.
 2. **Build Command:** `cd ledgerlens-front && npm install && npm run build`
 3. **Output Directory:** `ledgerlens-front/dist`
-4. Añade las variables de entorno requeridas.
+4. **Root Directory:** raíz del repo (contiene `vercel.json`)
+5. Añade las variables de entorno requeridas en **Settings → Environment Variables**.
+6. **Redeploy** para aplicar cambios.
+
+El `vercel.json` en la raíz ya incluye rewrites y `maxDuration: 60` para `/api/analyze`.
 
 ---
 
@@ -101,7 +128,7 @@ cd ledgerlens-front && npm install && npm run dev   # http://localhost:5173
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | GET | `/health` | Estado del servicio |
-| GET | `/api/analyze/:address` | Analiza billetera (?chain=avalanche\|fuji\|ethereum) |
+| GET | `/api/analyze/:address` | Analiza billetera (`?chain=avalanche|fuji|ethereum`) |
 
 ---
 
