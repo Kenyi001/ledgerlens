@@ -90,5 +90,41 @@
     margin: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-image: 
+      radial-gradient(circle at 2px 2px, rgba(255,255,255,0.02) 1px, transparent 0);
+    background-size: 24px 24px;
   }
+}
+
+/* PRISMA Custom Animations */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.08; transform: scale(1); }
+  50% { opacity: 0.15; transform: scale(1.05); }
+}
+
+@keyframes spin-slow-very {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.4); }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-spin-slow-very {
+  animation: spin-slow-very 60s linear infinite;
+}
+
+.animate-glow {
+  animation: glow 4s ease-in-out infinite;
+}
+
+/* Modern Typography Utilities */
+.tracking-prisma {
+  letter-spacing: -0.04em;
 }

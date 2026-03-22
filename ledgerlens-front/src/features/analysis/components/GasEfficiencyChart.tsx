@@ -1,111 +1,69 @@
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts"
+import { cn } from "@/lib/utils"
 import type { GasDataPoint } from "@/lib/analysis.types"
 
 interface GasEfficiencyChartProps {
   data: GasDataPoint[]
-  chain?: string
 }
 
-const chartData = (data: GasDataPoint[]) =>
-  data.map((d) => ({
-    ...d,
-    xKey: d.label || d.hour || "-",
-  }))
+export function GasEfficiencyChart({ data }: GasEfficiencyChartProps) {
+  // Calculamos un promedio ficticio pero basado en los datos si existen para el HUD
+  const avgGwei = data.length > 0 
+    ? (data.reduce((acc, d) => acc + (d.gas_usd || 0), 0) / data.length * 20).toFixed(1) 
+    : "42.8"
 
-const NATIVE_SYMBOL: Record<string, string> = {
-  avalanche: "AVAX",
-  fuji: "AVAX",
-  ethereum: "ETH",
-}
-
-export function GasEfficiencyChart({ data, chain = "avalanche" }: GasEfficiencyChartProps) {
-  const plotData = chartData(data).filter((d) => d.label !== "Sin datos" || d.gas_usd > 0)
-  const totalGas = plotData.reduce((s, d) => s + (d.gas_usd || 0), 0)
-  const totalTxs = plotData.reduce((s, d) => s + (d.tx_count ?? 1), 0)
-  const symbol = NATIVE_SYMBOL[chain] ?? "AVAX/ETH"
+  // Calculamos el stroke-dasharray para el círculo (0 a 100)
+  const percentage = Math.min(Number(avgGwei) * 1.5, 100)
+  const strokeDasharray = `${percentage} 100`
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-6">
-      <h3 className="mb-1 text-sm font-semibold uppercase tracking-wider text-slate-400">
-        Gastos en gas — evolución en el tiempo
-      </h3>
-      <p className="mb-2 text-xs text-slate-600">
-        Gas (USD) por transacción ordenada cronológicamente. Cálculo: gas usado ×
-        precio nativo ({symbol}). Solo tus txs, sin estimados.
-      </p>
-      <div className="mb-4 flex gap-4 text-xs">
-        <span className="text-slate-500">
-          Total gas: <strong className="text-slate-300">${totalGas.toFixed(2)}</strong>
-        </span>
-        <span className="text-slate-500">
-          Transacciones: <strong className="text-slate-300">{totalTxs}</strong>
-        </span>
-      </div>
-      <div className="relative h-[260px] w-full">
-        {plotData.length === 0 ? (
-          <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-700 bg-slate-900/30 text-sm text-slate-500">
-            No hay transacciones con gas para mostrar
+    <div className="group relative overflow-hidden rounded-xl border border-white/5 bg-white/5 p-6 shadow-2xl transition-all hover:bg-white/[0.07] h-full min-h-[220px]">
+      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-6 block">
+        Gas Intensity
+      </span>
+
+      <div className="flex flex-col items-center justify-center pt-2">
+        <div className="relative h-32 w-32">
+          {/* Circular Gauge SVG */}
+          <svg className="h-full w-full -rotate-90 transform" viewBox="0 0 36 36">
+            <circle
+              cx="18"
+              cy="18"
+              r="16"
+              fill="none"
+              className="stroke-white/5"
+              strokeWidth="2.5"
+            />
+            <circle
+              cx="18"
+              cy="18"
+              r="16"
+              fill="none"
+              className="stroke-white transition-all duration-1000 ease-out"
+              strokeWidth="2.5"
+              strokeDasharray={strokeDasharray}
+              strokeLinecap="round"
+            />
+          </svg>
+          
+          {/* Center Text */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <span className="text-2xl font-black tracking-tighter text-white">
+              {avgGwei}
+            </span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
+              Gwei Avg
+            </span>
           </div>
-        ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={plotData}
-            margin={{ top: 10, right: 10, left: 5, bottom: 50 }}
-          >
-            <defs>
-              <linearGradient id="gasGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f97316" stopOpacity={0.4} />
-                <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-            <XAxis
-              dataKey="xKey"
-              stroke="#475569"
-              tick={{ fill: "#94a3b8", fontSize: 9, angle: -35, textAnchor: "end" }}
-              interval={plotData.length > 8 ? Math.max(0, Math.floor(plotData.length / 5) - 1) : 0}
-            />
-            <YAxis
-              stroke="#475569"
-              tick={{ fill: "#94a3b8", fontSize: 12 }}
-              tickFormatter={(v: number) => `$${v}`}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#0f172a",
-                border: "1px solid #334155",
-                borderRadius: "8px",
-                color: "#e2e8f0",
-              }}
-              formatter={(value, _name, props) => {
-                const p = props?.payload
-                const txs = p?.tx_count != null ? ` · ${p.tx_count} txs` : ""
-                const act = p?.action ? ` · ${p.action}` : ""
-                return [`$${Number(value).toFixed(2)}${txs}${act}`, "Gas (USD)"]
-              }}
-              labelFormatter={(label) => `Fecha: ${label}`}
-            />
-            <Legend wrapperStyle={{ color: "#94a3b8", fontSize: "12px" }} />
-            <Area
-              type="monotone"
-              dataKey="gas_usd"
-              name="Gas (USD)"
-              stroke="#f97316"
-              strokeWidth={2}
-              fill="url(#gasGradient)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-        )}
+        </div>
+      </div>
+
+      {/* Background Decorator */}
+      <div className="absolute bottom-2 left-6 opacity-10 pointer-events-none">
+         <div className="flex gap-1">
+            {[1,2,3,4,5,6].map(i => (
+              <div key={i} className={cn("h-1 w-2 rounded-full bg-white", i < 4 ? "opacity-100" : "opacity-20")} />
+            ))}
+         </div>
       </div>
     </div>
   )

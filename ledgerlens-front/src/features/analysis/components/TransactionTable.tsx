@@ -1,319 +1,134 @@
 import { useMemo, useState } from "react"
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  CircleDot,
-  ExternalLink,
-  Info,
-} from "lucide-react"
-import { cn, normalizeToLatin } from "@/lib/utils"
+import { ExternalLink } from "lucide-react"
+import { cn } from "@/lib/utils"
 import type { Transaction } from "@/lib/analysis.types"
-import { getExplorerTxUrl } from "@/lib/explorer"
 
 interface TransactionTableProps {
   transactions: Transaction[]
   chain?: string
 }
 
-function formatAmountTrim(n: number): string {
-  if (!Number.isFinite(n) || n === 0) return "0"
-  const a = Math.abs(n)
-  if (a >= 0.0001) {
-    return a.toLocaleString("es-ES", { maximumFractionDigits: 6 })
-  }
-  return a.toExponential(2)
-}
-
-function activityPrimaryLine(t: Transaction): string {
-  const flow = t.flow ?? "neutral"
-  const hasTok =
-    t.token_amount != null && t.token_amount > 0 && t.token_symbol
-  const sym = normalizeToLatin(hasTok ? t.token_symbol! : t.native_symbol ?? "AVAX")
-  const amt = hasTok ? (t.token_amount ?? 0) : t.value_native ?? 0
-  const hasAmount =
-    hasTok || (t.value_native != null && Math.abs(t.value_native) > 1e-18)
-
-  if (!hasAmount || flow === "neutral") {
-    const a = normalizeToLatin(t.action)
-    return a.length > 56 ? `${a.slice(0, 55)}…` : a
-  }
-
-  const num = formatAmountTrim(amt)
-  return flow === "out"
-    ? `${num} ${sym} enviados`
-    : `${num} ${sym} recibidos`
-}
-
-function primaryUsd(t: Transaction): number | null {
-  if (t.token_amount && t.token_amount > 0) {
-    if (t.token_value_usd != null && t.token_value_usd > 0) return t.token_value_usd
-    if (t.value_usd != null && t.value_usd > 0) return t.value_usd
-    return null
-  }
-  if (t.value_usd != null && t.value_usd > 0) return t.value_usd
-  return null
-}
-
-/** Muestra decimales extra cuando el importe es pequeño (como en Core). */
-function formatUsdDisplay(n: number): string {
-  const abs = Math.abs(n)
-  if (abs < 0.01 && abs > 0) {
-    return abs.toLocaleString("es-ES", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6,
-    })
-  }
-  if (abs < 1) {
-    return abs.toLocaleString("es-ES", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 4,
-    })
-  }
-  return abs.toLocaleString("es-ES", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-}
-
-function capitalizeHeading(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1)
-}
-
-function groupByMonth(transactions: Transaction[]) {
-  const groups: { heading: string; txs: Transaction[] }[] = []
-  for (const tx of transactions) {
-    const d = new Date(tx.time)
-    const heading = capitalizeHeading(
-      d.toLocaleDateString("es", { month: "long", year: "numeric" })
-    )
-    const last = groups[groups.length - 1]
-    if (last && last.heading === heading) {
-      last.txs.push(tx)
-    } else {
-      groups.push({ heading, txs: [tx] })
-    }
-  }
-  return groups
+function timeAgo(dateStr: string) {
+  const seconds = Math.floor((new Date().getTime() - new Date(dateStr).getTime()) / 1000)
+  if (seconds < 60) return `${seconds}s ago`
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
+  return `${Math.floor(seconds / 86400)}d ago`
 }
 
 export function TransactionTable({ transactions, chain }: TransactionTableProps) {
-  const [showScam, setShowScam] = useState(false)
+  const [filter, setFilter] = useState<"all" | "swaps" | "transfers" | "risk">("all")
 
-  const { filteredTxs, scamCount } = useMemo(() => {
-    let count = 0
-    const filtered = transactions.filter((t) => {
-      if (t.is_scam) {
-        count++
-        return showScam
-      }
-      return true
-    })
-    return { filteredTxs: filtered, scamCount: count }
-  }, [transactions, showScam])
-
-  const groups = useMemo(() => groupByMonth(filteredTxs), [filteredTxs])
-
-  if (transactions.length === 0) {
-    return (
-      <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-6">
-        <h3 className="mb-1 text-lg font-semibold text-slate-100">Actividad</h3>
-        <p className="text-sm text-slate-500">Sin transacciones recientes.</p>
-      </div>
-    )
-  }
+  const filtered = useMemo(() => {
+    switch (filter) {
+      case "swaps": return transactions.filter(t => t.action.toLowerCase().includes("swap"))
+      case "transfers": return transactions.filter(t => t.action.toLowerCase().includes("transfer"))
+      case "risk": return transactions.filter(t => t.is_scam || (t.flow === "out")) // Simplificado para el ejemplo
+      default: return transactions
+    }
+  }, [transactions, filter])
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-4 sm:p-6">
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h3 className="mb-1 text-lg font-semibold tracking-tight text-slate-100">
-            Actividad
-          </h3>
-          <p className="text-xs text-slate-600">
-            USD aproximado según el indexador. Detalle en el explorador.
-          </p>
+    <div className="rounded-xl border border-white/5 bg-white/5 p-0 overflow-hidden shadow-2xl">
+      {/* Table Header HUD */}
+      <div className="flex items-center justify-between border-b border-white/5 bg-white/5 px-6 py-4">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white">
+          Ledger Feed: Live
+        </h3>
+        <div className="flex gap-2">
+          {["SWAPS", "TRANSFERS", "HIGH RISK"].map((label) => (
+            <button
+              key={label}
+              onClick={() => setFilter(label.toLowerCase().replace(" ", "") as any)}
+              className={cn(
+                "px-3 py-1 rounded text-[9px] font-black tracking-widest transition-all border border-transparent uppercase",
+                filter === label.toLowerCase().replace(" ", "") 
+                  ? "bg-white/10 text-white border-white/10" 
+                  : "text-slate-500 hover:text-slate-300"
+              )}
+            >
+              {label}
+            </button>
+          ))}
         </div>
-        
-        {scamCount > 0 && (
-          <button
-            onClick={() => setShowScam((s) => !s)}
-            className="self-start sm:self-auto rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1.5 text-xs font-medium text-orange-400 transition-colors hover:bg-orange-500/20"
-            title="Incluye: posibles estafas (caracteres sospechosos) y transferencias sin valor (fallidas/spam)"
-          >
-            {showScam ? "Ocultar" : "Ver"} {scamCount} sospechosas
-          </button>
-        )}
       </div>
 
-      <div className="space-y-8">
-        {groups.map((g) => (
-          <section key={g.heading}>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-              {g.heading}
-            </h4>
-            <ul className="divide-y divide-slate-800/90 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
-              {g.txs.map((t) => (
-                <ActivityRow key={t.id} tx={t} chain={chain} />
-              ))}
-            </ul>
-          </section>
-        ))}
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-white/5">
+              <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Tx Hash</th>
+              <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Method</th>
+              <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Value</th>
+              <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Source</th>
+              <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Destination</th>
+              <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Time</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {filtered.slice(0, 15).map((t) => {
+              const isApprove = t.action.toLowerCase().includes("approve")
+              
+              return (
+                <tr key={t.id} className="group hover:bg-white/[0.02] transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[10px] text-slate-400">
+                        {t.id.slice(0, 6)}...{t.id.slice(-4)}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={cn(
+                      "inline-block px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider",
+                      isApprove ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" : "bg-white/5 text-slate-400 border border-white/5"
+                    )}>
+                      {t.action.split(" ").pop()}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                     <span className="font-mono text-[10px] font-bold text-slate-300">
+                        {t.value_native?.toFixed(4) ?? "0.00"} {t.native_symbol || (chain === "ethereum" ? "ETH" : "AVAX")}
+                     </span>
+                  </td>
+                  <td className="px-6 py-4">
+                     <span className="font-mono text-[10px] text-slate-500">
+                        {t.counterparty.slice(0, 6)}...{t.counterparty.slice(-4)}
+                     </span>
+                  </td>
+                  <td className="px-6 py-4">
+                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                        {t.counterparty_type || "Unknown Contract"}
+                     </span>
+                  </td>
+                  <td className="px-6 py-4">
+                     <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-slate-500 italic">
+                          {timeAgo(t.time)}
+                        </span>
+                        <a 
+                          href={`https://snowtrace.io/tx/${t.id}`} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                           <ExternalLink className="h-3 w-3 text-slate-600 hover:text-white" />
+                        </a>
+                     </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        {filtered.length === 0 && (
+          <div className="px-6 py-12 text-center">
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-600">
+              No sequence found for current filter
+            </span>
+          </div>
+        )}
       </div>
     </div>
-  )
-}
-
-function ScamBadge({ reason }: { reason: string | null | undefined }) {
-  const [show, setShow] = useState(false)
-  const isCyrillic = reason === "cyrillic_token" || reason === "cyrillic_action"
-  const explain =
-    reason === "cyrillic_token"
-      ? "Token con caracteres cirílicos que imitan USDC/AVAX (ej. UЅDС en vez de USDC). Técnica de dusting/phishing: envían cantidades mínimas a muchas wallets. Excluido del volumen."
-      : reason === "cyrillic_action"
-        ? "Etiqueta con caracteres sospechosos (posible phishing). Excluido del volumen."
-        : reason === "zero_value"
-          ? "Transferencia sin valor (fallida, spam o dust). No necesariamente estafa. Excluido del volumen."
-          : "Posible actividad sospechosa. Excluido del volumen."
-
-  const label = isCyrillic ? "ESTAFA" : reason === "zero_value" ? "SIN VALOR" : "SCAM"
-
-  return (
-    <span
-      className="relative inline-flex items-center gap-1"
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
-    >
-      <span
-        className={cn(
-          "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide cursor-help",
-          reason === "zero_value" ? "bg-amber-950/50 text-amber-400" : "bg-orange-950/50 text-orange-400"
-        )}
-      >
-        {label}
-      </span>
-      <Info className="h-3 w-3 shrink-0 text-slate-500 cursor-help" aria-hidden />
-      {show && (
-        <div className="absolute left-0 top-full z-50 mt-1 max-w-[280px] rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 shadow-xl">
-          {explain}
-        </div>
-      )}
-    </span>
-  )
-}
-
-function ActivityRow({ tx, chain }: { tx: Transaction; chain?: string }) {
-  const flow = tx.flow ?? "neutral"
-  const title = activityPrimaryLine(tx)
-  const usd = primaryUsd(tx)
-  const url = getExplorerTxUrl(chain, tx.id)
-  const d = new Date(tx.time)
-  const timeStr = d.toLocaleString("es", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-
-  const icon =
-    flow === "in" ? (
-      <ArrowDownLeft className="h-4 w-4 text-emerald-400" aria-hidden />
-    ) : flow === "out" ? (
-      <ArrowUpRight className="h-4 w-4 text-rose-400" aria-hidden />
-    ) : (
-      <CircleDot className="h-4 w-4 text-slate-500" aria-hidden />
-    )
-
-  return (
-    <li>
-      <div className="flex items-center gap-3 px-3 py-3 sm:gap-4">
-        <div
-          className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-            flow === "in" && "bg-emerald-950/60",
-            flow === "out" && "bg-rose-950/50",
-            flow === "neutral" && "bg-slate-800/90"
-          )}
-        >
-          {icon}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p
-              className={cn(
-                "truncate text-[15px] font-medium leading-snug",
-                tx.is_scam
-                  ? "text-orange-400/80 line-through decoration-orange-500/50"
-                  : "text-slate-100"
-              )}
-            >
-              {title}
-            </p>
-            {!tx.is_scam && tx.counterparty_type && (
-              <span
-                className={cn(
-                  "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium",
-                  tx.counterparty_type === "dex" && "bg-indigo-950/50 text-indigo-400",
-                  tx.counterparty_type === "bridge" && "bg-cyan-950/50 text-cyan-400",
-                  tx.counterparty_type === "contract" && "bg-slate-700/80 text-slate-300",
-                  tx.counterparty_type === "wallet" && "bg-slate-600/50 text-slate-400"
-                )}
-                title={
-                  tx.counterparty_type === "dex"
-                    ? "Intercambio (DEX)"
-                    : tx.counterparty_type === "bridge"
-                      ? "Bridge"
-                      : tx.counterparty_type === "contract"
-                        ? "Contrato"
-                        : "Wallet / persona"
-                }
-              >
-                {tx.counterparty_type === "dex" && "DEX"}
-                {tx.counterparty_type === "bridge" && "Bridge"}
-                {tx.counterparty_type === "contract" && "Contrato"}
-                {tx.counterparty_type === "wallet" && "Wallet"}
-              </span>
-            )}
-            {tx.is_scam && (
-              <ScamBadge reason={tx.scam_reason} />
-            )}
-          </div>
-          {usd != null && (
-            <p
-              className={cn(
-                "mt-0.5 text-xs font-medium tabular-nums",
-                flow === "in" && "text-emerald-400",
-                flow === "out" && "text-rose-400",
-                flow === "neutral" && "text-slate-500"
-              )}
-            >
-              {flow === "in" && "+"}
-              {flow === "out" && "−"}
-              ${formatUsdDisplay(usd)}
-            </p>
-          )}
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <time
-            dateTime={tx.time}
-            className="text-right text-[11px] tabular-nums text-slate-500 sm:text-xs"
-          >
-            {timeStr}
-          </time>
-          {url ? (
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300"
-              title="Ver en el explorador"
-              aria-label="Abrir transacción en el explorador"
-            >
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          ) : null}
-        </div>
-      </div>
-    </li>
   )
 }

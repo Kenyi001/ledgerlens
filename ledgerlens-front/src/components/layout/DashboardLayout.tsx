@@ -6,9 +6,19 @@ import { GasEfficiencyChart } from "@/features/analysis/components/GasEfficiency
 import { MoneyFlowChart } from "@/features/analysis/components/MoneyFlowChart"
 import { TransactionTable } from "@/features/analysis/components/TransactionTable"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Search, Eye, Wallet, Download, CreditCard } from "lucide-react"
+import {
+  Download,
+  CreditCard,
+  Search,
+  Fingerprint,
+  Eye,
+  Wallet,
+  AlertTriangle,
+  Zap,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useConnection } from "wagmi"
+import { AiNarrativeTerminal } from "@/features/analysis/components/AiNarrativeTerminal"
 
 
 function LoadingSkeleton() {
@@ -38,47 +48,54 @@ function EmptyState({
   hasConnectedWallet?: boolean
 }) {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center">
-      <div className="flex h-24 w-24 items-center justify-center rounded-full bg-slate-900 ring-1 ring-slate-800">
-        <Eye className="h-10 w-10 text-indigo-400" />
+    <div className="flex min-h-[75vh] flex-col items-center justify-center gap-10 text-center relative z-10">
+      {/* Central Eye Hexagon/Circle Decorator */}
+      <div className="relative mb-4">
+        <div className="absolute inset-0 scale-[2.5] opacity-20 animate-pulse-slow">
+          <div className="h-full w-full rounded-full border border-dashed border-indigo-500/50" />
+        </div>
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 ring-1 ring-white/10 shadow-[0_0_30px_rgba(99,102,241,0.2)]">
+          <Eye className="h-8 w-8 text-white opacity-80" />
+        </div>
       </div>
-      <div className="max-w-md space-y-2">
-        <h2 className="text-2xl font-bold text-slate-100">
-          Prisma — Financial Intelligence
-        </h2>
-        <p className="text-sm leading-relaxed text-slate-400">
-          Pega una dirección EVM y elige Avalanche o Ethereum. Los datos vienen
-          de Glacier + el backend; el análisis lo genera la IA configurada en
-          el servidor (sin datos ficticios en pantalla).
+
+      <div className="space-y-6">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm">
+            <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="text-[10px] uppercase tracking-[0.2em] text-slate-300 font-bold">
+              Biometric Access Terminal
+            </span>
+          </div>
+          <h1 className="text-7xl sm:text-9xl font-black text-white tracking-prisma relative py-2">
+            PRISMA
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-32 h-0.5 bg-white rounded-full opacity-60" />
+          </h1>
+        </div>
+        
+        <p className="max-w-2xl text-[11px] sm:text-xs leading-[1.6] tracking-[0.15em] text-slate-500 font-bold uppercase mx-auto px-4">
+          AI-Driven Intelligence Engine. Detect Bots, Assess Risk,<br />
+          and Track Capital Flows Across EVM Networks.
         </p>
       </div>
-      <div className="flex flex-wrap items-center justify-center gap-3">
+
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4">
         {hasConnectedWallet && onAnalyzeMyWallet && (
           <button
             type="button"
             onClick={onAnalyzeMyWallet}
-            className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
+            className="group h-14 inline-flex items-center gap-3 rounded bg-white px-8 text-xs font-black tracking-widest text-slate-950 transition-all hover:bg-slate-200 active:scale-95 shadow-xl shadow-white/5"
           >
             <Wallet className="h-4 w-4" />
-            Analizar mi wallet conectada
+            SCAN CONNECTED WALLET
           </button>
         )}
-        <div className="flex items-center gap-2 rounded-full border border-dashed border-slate-800 bg-slate-900/30 px-4 py-2">
-          <Search className="h-4 w-4 text-slate-600" />
-          <span className="text-xs text-slate-600">
-            O pega una dirección:{" "}
-            <span className="font-mono text-slate-500">0x… (42 caracteres)</span>
-          </span>
-        </div>
+        
+        <button className="h-14 inline-flex items-center gap-3 rounded border border-white/5 bg-white/5 px-8 text-xs font-black tracking-widest text-slate-600 transition-all hover:bg-white/10">
+          <Search className="h-4 w-4" />
+          PASTE ADDRESS ABOVE TO BEGIN
+        </button>
       </div>
-      {hasConnectedWallet && (
-        <div className="mt-4 flex max-w-md items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-950/10 px-4 py-2 text-left text-xs text-slate-400">
-          <CreditCard className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
-          <span>
-            <strong className="text-emerald-400">x402:</strong> Con wallet conectada puedes pagar análisis en USDC (Fuji/C-Chain) cuando el servidor requiera cobro.
-          </span>
-        </div>
-      )}
     </div>
   )
 }
@@ -164,10 +181,28 @@ export function DashboardLayout() {
     address.toLowerCase() === walletAddress.toLowerCase()
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-950">
+    <div className="flex min-h-screen flex-col bg-slate-950 text-slate-200 relative overflow-hidden">
+      {/* Biometric Background Layers */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <Fingerprint 
+          className="absolute -bottom-24 -right-24 h-[600px] w-[600px] text-indigo-500/10 animate-pulse-slow" 
+          strokeWidth={0.5}
+        />
+        <Fingerprint 
+          className="absolute -top-32 -left-32 h-[400px] w-[400px] text-indigo-400/5 animate-spin-slow-very" 
+          strokeWidth={0.5}
+        />
+      </div>
+
       <Header />
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
+      <main className="flex-1 px-4 py-8 sm:px-6 relative z-10 w-full max-w-[1400px] mx-auto transition-all">
+        {/* Terminal Corner Marks (HUD) */}
+        <div className="absolute top-4 left-4 h-8 w-8 border-t border-l border-white/20 rounded-tl-lg pointer-events-none" />
+        <div className="absolute top-4 right-4 h-8 w-8 border-t border-r border-white/20 rounded-tr-lg pointer-events-none" />
+        <div className="absolute bottom-4 left-4 h-8 w-8 border-b border-l border-white/20 rounded-bl-lg pointer-events-none" />
+        <div className="absolute bottom-4 right-4 h-8 w-8 border-b border-r border-white/20 rounded-br-lg pointer-events-none" />
+
         {!isLoading && !analysisResult && !error && (
           <EmptyState
             hasConnectedWallet={!!address}
@@ -264,36 +299,80 @@ export function DashboardLayout() {
               </div>
             )}
 
-            <IdentityBadge result={analysisResult} />
-
-            <div className="space-y-8">
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="min-w-0">
-                  <MoneyFlowChart
-                    data={analysisResult.money_flow ?? []}
-                    chain={analysisResult.chain}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <GasEfficiencyChart
-                    data={analysisResult.gas_efficiency ?? []}
-                    chain={analysisResult.chain}
-                  />
-                </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="md:col-span-1 lg:col-span-1">
+                <IdentityBadge result={analysisResult} />
               </div>
-              <div>
-                <TransactionTable
-                  chain={analysisResult.chain}
-                  transactions={analysisResult.transactions ?? []}
+              <div className="md:col-span-1 lg:col-span-2">
+                <AiNarrativeTerminal
+                  result={analysisResult}
+                  address={walletAddress}
                 />
               </div>
             </div>
+
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="min-w-0">
+                <GasEfficiencyChart
+                  data={analysisResult.gas_efficiency ?? []}
+                />
+              </div>
+              <div className="min-w-0">
+                <MoneyFlowChart
+                  data={analysisResult.money_flow ?? []}
+                />
+              </div>
+              <div className="min-w-0">
+                {/* Protocol Alerts Placeholder to match image */}
+                <div className="rounded-xl border border-white/5 bg-white/5 p-6 h-full min-h-[220px]">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-4 block">
+                    Protocol Alerts
+                  </span>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 rounded bg-red-500/10 border-l-2 border-red-500">
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                      <div className="flex-1">
+                        <p className="text-[10px] font-black uppercase text-white">High Risk Approval</p>
+                        <p className="text-[9px] text-slate-500 font-mono">Contract 0x44...901</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded bg-white/5 border-l-2 border-white/20">
+                      <Zap className="h-4 w-4 text-slate-400" />
+                      <div className="flex-1">
+                        <p className="text-[10px] font-black uppercase text-white">Whale Transfer</p>
+                        <p className="text-[9px] text-slate-500 font-mono">5,000 AVAX -&gt; Coinbase</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <TransactionTable
+              chain={analysisResult.chain}
+              transactions={analysisResult.transactions ?? []}
+            />
           </div>
         )}
       </main>
 
-      <footer className="border-t border-slate-800 py-4 text-center text-xs text-slate-600">
-        Prisma — Aleph Hackathon 2026 · Powered by GenLayer &amp; Avalanche
+      <footer className="border-t border-white/5 py-4 px-6 relative z-10">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 font-mono">
+            PRISMA © 2026
+          </span>
+          <div className="flex items-center gap-6">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 font-mono">
+              PRISMA CORE V.1.0
+            </span>
+            <div className="flex items-center gap-2">
+              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">
+                System Operational
+              </span>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   )

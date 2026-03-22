@@ -1,34 +1,29 @@
 import { useEffect, useRef, useState } from "react"
-import { Search, Loader2, Eye, Wallet, LogOut, ChevronDown } from "lucide-react"
+import { Search, Eye, Wallet, ChevronDown } from "lucide-react"
 import {
   useBalance,
   useConnect,
   useConnection,
   useConnectors,
   useDisconnect,
-  useSwitchChain,
 } from "wagmi"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { useAnalysisStore } from "@/features/analysis/store/useAnalysisStore"
 import { useRunAnalysis } from "@/features/analysis/hooks/useRunAnalysis"
-import type { SupportedChain } from "@/lib/api"
 
 export function Header() {
   const [input, setInput] = useState("")
   const [walletMenuOpen, setWalletMenuOpen] = useState(false)
   const walletWrapRef = useRef<HTMLDivElement>(null)
-  const { isLoading, reset, chain, setChain } = useAnalysisStore()
+  const { reset } = useAnalysisStore()
   const runAnalysis = useRunAnalysis()
 
   const { address, status } = useConnection()
   const connected = status === "connected" && !!address
   const { data: balance } = useBalance({ address: connected ? address : undefined })
   const connectors = useConnectors()
-  const { mutate: connect, isPending: isConnecting, error: connectError, reset: resetConnect } = useConnect()
-  const { mutateAsync: disconnectAsync, isPending: isDisconnecting } =
+  const { mutate: connect, error: connectError, reset: resetConnect } = useConnect()
+  const { mutateAsync: disconnectAsync } =
     useDisconnect()
-  const { isPending: isSwitching } = useSwitchChain()
 
   useEffect(() => {
     if (address) setInput(address)
@@ -58,12 +53,6 @@ export function Header() {
     if (e.key === "Enter") handleSearch()
   }
 
-  const handleChainSelect = (value: SupportedChain) => {
-    setChain(value)
-    /* No cambiar la wallet: el selector define qué red analizar (Glacier),
-       no la red de la wallet. La wallet solo se usa para x402 y "Analizar mi wallet". */
-  }
-
   const shortAddress = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`
 
   /** Desconecta la sesión actual y abre el menú para elegir MetaMask u otra wallet (Core, etc.). */
@@ -90,131 +79,107 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
+    <header className="sticky top-0 z-50 border-b border-white/5 bg-black/80 backdrop-blur-xl px-6">
+      <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4">
+        {/* Logo Left */}
         <button
           onClick={reset}
-          className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80"
+          className="flex shrink-0 items-center gap-3 transition-opacity hover:opacity-80 group"
         >
-          <Eye className="h-6 w-6 text-indigo-400" />
-          <span className="text-lg font-bold tracking-tight text-slate-100">
-            <span className="text-indigo-400">Prisma</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/5 group-hover:bg-white/10 transition-colors">
+            <Eye className="h-4 w-4 text-white" />
+          </div>
+          <span className="text-sm font-black tracking-[0.4em] text-white uppercase font-prisma">
+            PRISMA
           </span>
         </button>
 
-        <div className="relative flex flex-1 items-center gap-2">
-          <select
-            value={chain}
-            onChange={(e) =>
-              handleChainSelect(e.target.value as SupportedChain)
-            }
-            disabled={isSwitching}
-            className="h-10 rounded-md border border-slate-800 bg-slate-900/50 px-3 text-sm text-slate-200 disabled:opacity-50"
-          >
-            <option value="avalanche">Avalanche (C-Chain)</option>
-            <option value="fuji">Avalanche Fuji (testnet)</option>
-            <option value="ethereum">Ethereum</option>
-          </select>
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-            <Input
+        {/* Search Center */}
+        <div className="flex-1 max-w-xl">
+          <div className="relative group">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 z-10" />
+            <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Connect wallet to auto-fill, or paste address (0x...)"
-              className="h-10 border-slate-800 bg-slate-900/50 pl-10 font-mono text-sm text-slate-200 placeholder:text-slate-600 focus-visible:ring-indigo-500/40"
+              placeholder="SEARCH WALLET ADDRESS..."
+              className="w-full h-10 border border-white/5 bg-white/5 pl-10 pr-4 font-mono text-[11px] text-slate-300 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-white/20 rounded transition-all"
             />
           </div>
-          <Button
-            onClick={handleSearch}
-            disabled={isLoading || !input.trim()}
-            className="h-10 shrink-0 bg-indigo-600 px-5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-40"
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : connected && input.trim().toLowerCase() === address?.toLowerCase() ? (
-              "Analyze Me"
-            ) : (
-              "Analyze"
-            )}
-          </Button>
         </div>
 
-        <div className="relative shrink-0" ref={walletWrapRef}>
+        {/* Wallet Right */}
+        <div className="relative" ref={walletWrapRef}>
           {connected ? (
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              onClick={() => setWalletMenuOpen((o) => !o)}
+              className="flex items-center gap-4 px-3 py-2 rounded border border-transparent hover:border-white/5 hover:bg-white/5 transition-all"
+            >
               {balance && (
-                <span
-                  className="rounded-md bg-slate-800/80 px-2 py-1 font-mono text-xs text-emerald-400"
-                  title={`Balance: ${balance.value} wei`}
-                >
-                  {(Number(balance.value) / 10 ** balance.decimals).toFixed(4)}{" "}
-                  {balance.symbol}
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 font-mono">
+                  {(Number(balance.value) / 10 ** balance.decimals).toFixed(4)} {balance.symbol}
                 </span>
               )}
-              <span className="max-w-[140px] truncate font-mono text-xs text-slate-400">
-                {shortAddress(address!)}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isDisconnecting}
-                onClick={() => changeWallet()}
-                className="h-10 shrink-0 border-slate-700 bg-transparent text-xs text-slate-300 hover:bg-slate-800 hover:text-slate-100"
-                title="Desconectar y elegir otra wallet (MetaMask, Core, etc.)"
-              >
-                Cambiar wallet
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isDisconnecting}
-                onClick={() => disconnectAsync()}
-                className="h-10 shrink-0 gap-2 border-slate-700 bg-transparent text-sm text-slate-300 hover:bg-slate-800 hover:text-slate-100"
-              >
-                <LogOut className="h-4 w-4" />
-                Salir
-              </Button>
-            </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white font-mono">
+                  {shortAddress(address!)}
+                </span>
+                <ChevronDown className="h-3 w-3 text-slate-500" />
+              </div>
+            </button>
           ) : (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setWalletMenuOpen((o) => !o)}
-                disabled={isConnecting}
-                className="h-10 shrink-0 gap-2 border-slate-700 bg-transparent text-sm text-slate-300 hover:bg-slate-800 hover:text-slate-100"
-              >
-                <Wallet className="h-4 w-4" />
-                Connect wallet
-                <ChevronDown className="h-4 w-4 opacity-70" />
-              </Button>
-              {walletMenuOpen && (
-                <div className="absolute right-0 top-full z-[100] mt-1 min-w-[220px] rounded-md border border-slate-800 bg-slate-900 py-1 shadow-xl">
+            <button
+              onClick={() => setWalletMenuOpen((o) => !o)}
+              className="h-9 px-4 flex items-center gap-2 rounded border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-white/10 transition-all"
+            >
+              <Wallet className="h-3.5 w-3.5" />
+              Connect Wallet
+            </button>
+          )}
+
+          {walletMenuOpen && (
+            <div className="absolute right-0 top-full z-[100] mt-2 min-w-[220px] rounded border border-white/10 bg-slate-950 p-1 shadow-2xl shadow-black">
+              {!connected ? (
+                <>
                   {connectError && (
-                    <div className="border-b border-slate-800 px-3 py-2">
-                      <p className="text-xs text-red-400">{connectError.message}</p>
+                    <div className="px-3 py-2 border-b border-white/5">
+                      <p className="text-[10px] text-red-500 leading-tight">{connectError.message}</p>
                     </div>
                   )}
                   {connectors.length === 0 ? (
-                    <p className="px-3 py-4 text-xs text-slate-500">
-                      No hay wallets detectadas. Instala MetaMask o Core.
+                    <p className="px-3 py-4 text-[10px] text-slate-500 uppercase tracking-widest">
+                      No Wallets Found
                     </p>
                   ) : (
                     connectors.map((connector) => (
                       <button
                         key={connector.id}
                         type="button"
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
+                        className="flex w-full items-center gap-3 px-3 py-2.5 rounded text-left text-[10px] uppercase font-bold tracking-widest text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
                         onClick={() => connectWithConnector(connector)}
                       >
                         {connector.name}
                       </button>
                     ))
                   )}
+                </>
+              ) : (
+                <div className="py-1">
+                  <button
+                    onClick={() => changeWallet()}
+                    className="flex w-full items-center gap-3 px-3 py-2.5 rounded text-left text-[10px] uppercase font-bold tracking-widest text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
+                  >
+                    Switch Wallet
+                  </button>
+                  <button
+                    onClick={() => disconnectAsync()}
+                    className="flex w-full items-center gap-3 px-3 py-2.5 rounded text-left text-[10px] uppercase font-bold tracking-widest text-rose-500 hover:bg-rose-500/10 transition-colors"
+                  >
+                    Disconnect
+                  </button>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
