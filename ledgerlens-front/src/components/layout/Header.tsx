@@ -4,6 +4,7 @@ import {
   useBalance,
   useConnect,
   useConnection,
+  useConnectors,
   useDisconnect,
   useSwitchChain,
 } from "wagmi"
@@ -24,7 +25,8 @@ export function Header() {
   const { address, status } = useConnection()
   const connected = status === "connected" && !!address
   const { data: balance } = useBalance({ address: connected ? address : undefined })
-  const { mutate: connect, connectors, isPending: isConnecting } = useConnect()
+  const connectors = useConnectors()
+  const { mutate: connect, isPending: isConnecting, error: connectError, reset: resetConnect } = useConnect()
   const { mutateAsync: disconnectAsync, isPending: isDisconnecting } =
     useDisconnect()
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain()
@@ -79,8 +81,9 @@ export function Header() {
 
   /** Al elegir un conector nuevo: primero cortar la sesión anterior si existía (evita conflictos entre proveedores). */
   const connectWithConnector = async (
-    connector: NonNullable<(typeof connectors)[number]>
+    connector: (typeof connectors)[number]
   ) => {
+    resetConnect?.()
     try {
       if (connected) await disconnectAsync()
     } catch {
@@ -89,9 +92,6 @@ export function Header() {
     connect({ connector })
     setWalletMenuOpen(false)
   }
-
-  const metaMaskConnector = connectors.find((c) => c.id === "metaMask")
-  const injectedConnector = connectors.find((c) => c.id === "injected")
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl">
@@ -102,7 +102,7 @@ export function Header() {
         >
           <Eye className="h-6 w-6 text-indigo-400" />
           <span className="text-lg font-bold tracking-tight text-slate-100">
-            Ledger<span className="text-indigo-400">Lens</span>
+            <span className="text-indigo-400">Prisma</span>
           </span>
         </button>
 
@@ -195,23 +195,26 @@ export function Header() {
               </Button>
               {walletMenuOpen && (
                 <div className="absolute right-0 top-full z-[100] mt-1 min-w-[220px] rounded-md border border-slate-800 bg-slate-900 py-1 shadow-xl">
-                  {metaMaskConnector && (
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
-                      onClick={() => connectWithConnector(metaMaskConnector)}
-                    >
-                      MetaMask
-                    </button>
+                  {connectError && (
+                    <div className="border-b border-slate-800 px-3 py-2">
+                      <p className="text-xs text-red-400">{connectError.message}</p>
+                    </div>
                   )}
-                  {injectedConnector && (
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
-                      onClick={() => connectWithConnector(injectedConnector)}
-                    >
-                      Browser wallet (Core, etc.)
-                    </button>
+                  {connectors.length === 0 ? (
+                    <p className="px-3 py-4 text-xs text-slate-500">
+                      No hay wallets detectadas. Instala MetaMask o Core.
+                    </p>
+                  ) : (
+                    connectors.map((connector) => (
+                      <button
+                        key={connector.id}
+                        type="button"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
+                        onClick={() => connectWithConnector(connector)}
+                      >
+                        {connector.name}
+                      </button>
+                    ))
                   )}
                 </div>
               )}

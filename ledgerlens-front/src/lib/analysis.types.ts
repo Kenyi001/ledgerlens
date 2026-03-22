@@ -26,6 +26,8 @@ export interface Transaction {
   is_scam?: boolean
   /** Motivo: cyrillic_token | cyrillic_action | zero_value */
   scam_reason?: string | null
+  /** Tipo de destino: dex | bridge | contract | wallet */
+  counterparty_type?: string
 }
 
 export interface GasDataPoint {
@@ -41,12 +43,20 @@ export interface GasDataPoint {
   hour?: string
 }
 
+export interface MoneyFlowDataPoint {
+  label: string
+  time?: string
+  income_usd: number
+  expense_usd: number
+}
+
 export interface AnalysisResult {
   identity: string
   risk_score: number
   narrative: string
   transactions: Transaction[]
   gas_efficiency: GasDataPoint[]
+  money_flow?: MoneyFlowDataPoint[]
   /** Red usada para el análisis (viene del backend) */
   chain?: string
   /** Hash de tx de liquidación USDC (x402), si aplica */

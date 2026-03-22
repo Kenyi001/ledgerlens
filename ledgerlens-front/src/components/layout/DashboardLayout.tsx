@@ -3,6 +3,7 @@ import { useAnalysisStore } from "@/features/analysis/store/useAnalysisStore"
 import { useRunAnalysis } from "@/features/analysis/hooks/useRunAnalysis"
 import { IdentityBadge } from "@/features/analysis/components/IdentityBadge"
 import { GasEfficiencyChart } from "@/features/analysis/components/GasEfficiencyChart"
+import { MoneyFlowChart } from "@/features/analysis/components/MoneyFlowChart"
 import { TransactionTable } from "@/features/analysis/components/TransactionTable"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Search, Eye, Wallet, Download, CreditCard } from "lucide-react"
@@ -42,7 +43,7 @@ function EmptyState({
       </div>
       <div className="max-w-md space-y-2">
         <h2 className="text-2xl font-bold text-slate-100">
-          Financial Intelligence Dashboard
+          Prisma — Financial Intelligence
         </h2>
         <p className="text-sm leading-relaxed text-slate-400">
           Pega una dirección EVM y elige Avalanche o Ethereum. Los datos vienen
@@ -181,9 +182,14 @@ export function DashboardLayout() {
                 {walletAddress}
               </code>
               {isMyWallet && (
-                <span className="rounded-full bg-emerald-900/40 px-2 py-0.5 text-emerald-400">
-                  Mi wallet
-                </span>
+                <>
+                  <span className="rounded-full bg-emerald-900/40 px-2 py-0.5 text-emerald-400">
+                    Mi wallet
+                  </span>
+                  <span className="text-slate-500" title="Con wallet conectada ves balance en tiempo real y puedes pagar vía x402">
+                    (más info con wallet conectada)
+                  </span>
+                </>
               )}
               {analysisResult.chain && (
                 <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 font-medium capitalize text-slate-300">
@@ -239,17 +245,25 @@ export function DashboardLayout() {
 
             <IdentityBadge result={analysisResult} />
 
-            <div className="mx-auto flex max-w-xl flex-col gap-8 lg:max-w-none lg:flex-row lg:items-start lg:gap-8">
-              <div className="min-w-0 flex-1 lg:max-w-xl">
+            <div className="space-y-8">
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div className="min-w-0">
+                  <MoneyFlowChart
+                    data={analysisResult.money_flow ?? []}
+                    chain={analysisResult.chain}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <GasEfficiencyChart
+                    data={analysisResult.gas_efficiency ?? []}
+                    chain={analysisResult.chain}
+                  />
+                </div>
+              </div>
+              <div>
                 <TransactionTable
                   chain={analysisResult.chain}
                   transactions={analysisResult.transactions ?? []}
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <GasEfficiencyChart
-                  data={analysisResult.gas_efficiency ?? []}
-                  chain={analysisResult.chain}
                 />
               </div>
             </div>
@@ -258,7 +272,7 @@ export function DashboardLayout() {
       </main>
 
       <footer className="border-t border-slate-800 py-4 text-center text-xs text-slate-600">
-        LedgerLens — Aleph Hackathon 2026 · Powered by GenLayer &amp; Avalanche
+        Prisma — Aleph Hackathon 2026 · Powered by GenLayer &amp; Avalanche
       </footer>
     </div>
   )

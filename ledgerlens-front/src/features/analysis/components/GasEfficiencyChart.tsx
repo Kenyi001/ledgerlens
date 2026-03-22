@@ -1,6 +1,6 @@
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -36,7 +36,7 @@ export function GasEfficiencyChart({ data, chain = "avalanche" }: GasEfficiencyC
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-6">
       <h3 className="mb-1 text-sm font-semibold uppercase tracking-wider text-slate-400">
-        Gas a lo largo del tiempo
+        Gastos en gas — evolución en el tiempo
       </h3>
       <p className="mb-2 text-xs text-slate-600">
         Gas (USD) por transacción ordenada cronológicamente. Cálculo: gas usado ×
@@ -57,10 +57,16 @@ export function GasEfficiencyChart({ data, chain = "avalanche" }: GasEfficiencyC
           </div>
         ) : (
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
+          <AreaChart
             data={plotData}
             margin={{ top: 10, right: 10, left: 5, bottom: 15 }}
           >
+            <defs>
+              <linearGradient id="gasGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#f97316" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
             <XAxis
               dataKey="xKey"
@@ -89,13 +95,15 @@ export function GasEfficiencyChart({ data, chain = "avalanche" }: GasEfficiencyC
               labelFormatter={(label) => `Fecha: ${label}`}
             />
             <Legend wrapperStyle={{ color: "#94a3b8", fontSize: "12px" }} />
-            <Bar
+            <Area
+              type="monotone"
               dataKey="gas_usd"
               name="Gas (USD)"
-              fill="#ef4444"
-              radius={[2, 2, 0, 0]}
+              stroke="#f97316"
+              strokeWidth={2}
+              fill="url(#gasGradient)"
             />
-          </BarChart>
+          </AreaChart>
         </ResponsiveContainer>
         )}
       </div>

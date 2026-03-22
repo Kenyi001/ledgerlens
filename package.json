@@ -1,7 +1,7 @@
 {
   "name": "ledgerlens-backend",
   "version": "1.0.0",
-  "description": "Backend API for LedgerLens - Avalanche wallet analysis",
+  "description": "Backend API for Prisma - Avalanche wallet analysis",
   "type": "module",
   "main": "src/index.js",
   "scripts": {

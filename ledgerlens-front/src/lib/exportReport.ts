@@ -25,7 +25,7 @@ export function downloadReportPdf(result: AnalysisResult, walletAddress: string)
   doc.rect(0, 0, 210, 25, "F")
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(18)
-  doc.text("LedgerLens — Reporte de Análisis", margin, 18)
+  doc.text("Prisma — Reporte de Análisis", margin, 18)
   doc.setTextColor(0, 0, 0)
   y = 35
 
@@ -61,8 +61,10 @@ export function downloadReportPdf(result: AnalysisResult, walletAddress: string)
 
   addText("Transacciones recientes", 12, true)
   const txs = (result.transactions ?? []).slice(0, 30)
+  const typeLabel = (t: { counterparty_type?: string }) =>
+    t.counterparty_type ? ` [${t.counterparty_type}]` : ""
   for (const t of txs) {
-    const scamTag = t.is_scam ? " [SOSPECHOSO]" : ""
+    const scamTag = t.is_scam ? " [SOSPECHOSO]" : typeLabel(t)
     addText(`${t.time?.slice(0, 10)} · ${t.action}${scamTag} — $${(t.gas_usd ?? 0).toFixed(2)} gas`, 8)
   }
 
@@ -70,6 +72,6 @@ export function downloadReportPdf(result: AnalysisResult, walletAddress: string)
     addText(`... y ${(result.transactions?.length ?? 0) - 30} transacciones más`, 8)
   }
 
-  addText("— LedgerLens · Aleph Hackathon 2026 · Powered by GenLayer & Avalanche", 8)
-  doc.save(`ledgerlens-reporte-${walletAddress.slice(2, 10)}.pdf`)
+  addText("— Prisma · Aleph Hackathon 2026 · Powered by GenLayer & Avalanche", 8)
+  doc.save(`prisma-reporte-${walletAddress.slice(2, 10)}.pdf`)
 }

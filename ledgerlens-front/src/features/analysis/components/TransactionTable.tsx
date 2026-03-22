@@ -210,6 +210,31 @@ function ActivityRow({ tx, chain }: { tx: Transaction; chain?: string }) {
             >
               {title}
             </p>
+            {!tx.is_scam && tx.counterparty_type && (
+              <span
+                className={cn(
+                  "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium",
+                  tx.counterparty_type === "dex" && "bg-indigo-950/50 text-indigo-400",
+                  tx.counterparty_type === "bridge" && "bg-cyan-950/50 text-cyan-400",
+                  tx.counterparty_type === "contract" && "bg-slate-700/80 text-slate-300",
+                  tx.counterparty_type === "wallet" && "bg-slate-600/50 text-slate-400"
+                )}
+                title={
+                  tx.counterparty_type === "dex"
+                    ? "Intercambio (DEX)"
+                    : tx.counterparty_type === "bridge"
+                      ? "Bridge"
+                      : tx.counterparty_type === "contract"
+                        ? "Contrato"
+                        : "Wallet / persona"
+                }
+              >
+                {tx.counterparty_type === "dex" && "DEX"}
+                {tx.counterparty_type === "bridge" && "Bridge"}
+                {tx.counterparty_type === "contract" && "Contrato"}
+                {tx.counterparty_type === "wallet" && "Wallet"}
+              </span>
+            )}
             {tx.is_scam && (
               <span
                 className={cn(

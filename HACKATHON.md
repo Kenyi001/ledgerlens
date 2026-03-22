@@ -1,9 +1,9 @@
-# LedgerLens — Aleph Hackathon March 2026
+# Prisma — Aleph Hackathon March 2026
 
 ## Tracks aplicables
 
-| Track | Requisitos | Estado LedgerLens |
-|-------|------------|-------------------|
+| Track | Requisitos | Estado Prisma |
+|-------|------------|---------------|
 | **Avalanche** | Glacier API, C-Chain, build.avax.network | ✅ Glacier, Avalanche C-Chain + Ethereum |
 | **GenLayer** | Intelligent Contract, Testnet Bradbury, Optimistic Democracy | ✅ Contrato desplegado en StudioNet |
 
@@ -56,7 +56,7 @@ Ver **[HACKATHON_GENLAYER_REQS.md](./HACKATHON_GENLAYER_REQS.md)** para cumplimi
 
 ## Herramientas y datos del hackathon
 
-| Recurso | LedgerLens | Link |
+| Recurso | Prisma | Link |
 |---------|------------|------|
 | Avalanche Glacier API | ✅ Datos de txs | [AvaCloud](https://app.avacloud.io/) |
 | Avalanche C-Chain | ✅ Chain 43114 | [build.avax.network](https://build.avax.network/) |
@@ -70,7 +70,7 @@ Ver **[HACKATHON_GENLAYER_REQS.md](./HACKATHON_GENLAYER_REQS.md)** para cumplimi
 
 1. [Aleph Hackathon](https://dorahacks.io/hackathon/alephhackathonm26/detail)
 2. Submit BUIDL → selecciona **Avalanche** y/o **GenLayer**
-3. GitHub: `https://github.com/Kenyi001/ledgerlens`
+3. GitHub: `https://github.com/Kenyi001/prisma` (o ledgerlens si no renombrado)
 4. Demo video: graba 3 min mostrando connect wallet → analyze → resultados
 5. Si usas GenLayer: indica **contract address** en la descripción
 

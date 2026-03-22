@@ -1,8 +1,8 @@
-# LedgerLens — Cumplimiento requisitos GenLayer (Aleph + Hackathon oficial)
+# Prisma — Cumplimiento requisitos GenLayer (Aleph + Hackathon oficial)
 
 ## Requisitos técnicos del track GenLayer
 
-| Requisito | Descripción | Estado LedgerLens |
+| Requisito | Descripción | Estado Prisma |
 |-----------|-------------|-------------------|
 | **Contrato Inteligente** | Python, genlayer SDK | ✅ `contracts/wallet_analyzer.py` |
 | **Consenso optimista de la democracia** | Leader propone, validadores votan, ventana de apelación | ✅ Usa `gl.vm.run_nondet_unsafe(leader_fn, validator_fn)` — GenLayer aplica Optimistic Democracy |
@@ -22,7 +22,7 @@
 
 ---
 
-## Cómo cumple LedgerLens cada requisito
+## Cómo cumple Prisma cada requisito
 
 ### 1. Consenso optimista de la democracia
 

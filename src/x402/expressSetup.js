@@ -75,7 +75,7 @@ export function createX402PaymentMiddleware() {
           payTo,
         },
       ],
-      description: "Análisis de billetera LedgerLens (Glacier + IA)",
+      description: "Análisis de billetera Prisma (Glacier + IA)",
       mimeType: "application/json",
     },
   };

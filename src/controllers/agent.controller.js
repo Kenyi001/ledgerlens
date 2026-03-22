@@ -79,7 +79,7 @@ export async function runAgentController(req, res) {
     }
 
     report = await response.json();
-    log("✅ Datos adquiridos on-chain desde la API de LedgerLens.");
+    log("✅ Datos adquiridos on-chain desde la API de Prisma.");
     
     const pmtHeader = response.headers.get("X-PAYMENT-RESPONSE");
     if (pmtHeader) {

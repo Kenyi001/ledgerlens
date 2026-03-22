@@ -1,120 +1,98 @@
-# LedgerLens
+# Prisma
 
-> Analizador financiero on-chain para billeteras Avalanche y Ethereum. Extrae transacciones, calcula estadísticas y usa IA para clasificar **Humano vs Bot** con perfilamiento de riesgo.  
+> **Analizador financiero on-chain** para billeteras Avalanche y Ethereum. Extrae transacciones, clasifica **Humano vs Bot** con IA y ofrece dashboards de ingresos, gastos y gas.
+>
 > **Aleph Hackathon 2026**
 
-→ **Hackathon:** [HACKATHON.md](./HACKATHON.md) · **Checklist:** [CHECKLIST.md](./CHECKLIST.md)
-
-## Stack
-
-| Capa | Tecnología |
-|------|------------|
-| Frontend | React 19 + Vite + TypeScript + Tailwind + wagmi + shadcn/ui |
-| Backend | Node.js + Express + ES Modules + Vercel Serverless |
-| L1 Datos | Avalanche Glacier API (C-Chain + Ethereum) |
-| IA | Hugging Face (principal) → OpenAI (fallback) → GenLayer (opcional) |
-| Wallet | MetaMask / Core (Avalanche + Ethereum) |
-| Pagos API (opc.) | [x402](https://docs.x402.org/) + facilitator ([PayAI](https://facilitator.payai.network) por defecto; compatible Avalanche Fuji / C-Chain) |
-
-### Built for Avalanche C-Chain
-
-LedgerLens está pensado para **Avalanche**: datos vía [Glacier](https://developers.avacloud.io/), análisis en C-Chain o Ethereum, y opcionalmente **cobro por API con x402** en **Fuji** (testnet) o **mainnet** usando USDC (EIP-3009). Recursos útiles:
-
-- [Avalanche Builder Hub](https://build.avax.network/) — documentación y academy  
-- [x402 en Avalanche Academy](https://build.avax.network/academy/blockchain/x402-payment-infrastructure) — flujo HTTP 402, `X-PAYMENT`, facilitators  
-- [USDC en Fuji](https://build.avax.network/academy/blockchain/x402-payment-infrastructure/05-hands-on-implementation/01-environment-setup) — contrato de prueba y faucet (Academy)
-
-Variables principales: `X402_ENABLED`, `X402_PAY_TO`, `X402_AMOUNT_USDC`, `X402_NETWORK` (ver `.env.example`). Con `X402_ENABLED=false` el análisis sigue siendo gratuito como antes.
+→ [HACKATHON.md](./HACKATHON.md) · [CHECKLIST.md](./CHECKLIST.md) · [SCAM_DETECTION.md](./SCAM_DETECTION.md) · [X402.md](./X402.md) · [GENLAYER.md](./GENLAYER.md)
 
 ---
 
-## Cómo obtener las API Keys (obligatorias)
+## Para jurados y calificadores
 
-### 1. GLACIER_API_KEY (obligatoria)
+Este documento resume el **stack tecnológico**, cómo se usaron las **tecnologías de cada pool de premios** y qué se implementó correctamente.
 
-1. Entra a **[AvaCloud](https://app.avacloud.io/)** y crea una cuenta.
-2. En el dashboard, ve a **API Keys** o **Developer**.
-3. Crea una nueva API key.
-4. Copia la key y úsala como `GLACIER_API_KEY` en tu `.env`.
+### Tracks / Pools de premios
 
-La Glacier API es la fuente de datos para transacciones (Avalanche C-Chain + Ethereum).
+| Track | Tecnologías requeridas | Uso en Prisma |
+|-------|------------------------|---------------|
+| **Avalanche** | Glacier API, C-Chain, build.avax.network | ✅ Glacier API como fuente de datos on-chain; soporte Avalanche C-Chain (43114) y Fuji (43113); enlaces a Snowtrace |
+| **GenLayer** | Intelligent Contracts, Testnet Bradbury, consenso LLM | ✅ Contrato desplegado en Bradbury; IA descentralizada con fallback a OpenAI/Hugging Face |
+| **x402** | HTTP 402, pago USDC, Avalanche | ✅ Middleware x402 en backend; pago USDC vía PayAI en Fuji/C-Chain; cliente frontend con wrapFetchWithPayment |
 
-### 2. Proveedor de IA (al menos uno)
+### Stack tecnológico completo
 
-**Hugging Face (recomendado, gratis):**
-1. [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) → New token (tipo Read).
-2. Añade `HUGGINGFACE_API_KEY=hf_...` en `.env`.
+| Capa | Tecnología | Versión / Uso |
+|------|------------|---------------|
+| **Frontend** | React 19, Vite 8, TypeScript, Tailwind 4 | SPA con HMR |
+| **Estado / Wallet** | wagmi 3, viem 2 | Conexión MetaMask, Core; chains Avalanche, Fuji, Ethereum |
+| **Gráficos** | Recharts | Dashboards de ingresos/gastos, gas |
+| **Backend** | Node.js, Express, ES Modules | API REST; serverless en Vercel |
+| **L1 Datos** | Avalanche Glacier API | Transacciones, balances; Avalanche + Ethereum |
+| **IA** | Hugging Face, OpenAI, GenLayer | Clasificación Humano/Bot; consenso LLM vía GenLayer |
+| **Pagos API** | x402, @x402/core, @x402/express, @x402/evm, PayAI | Cobro USDC opcional por análisis |
+| **GenLayer** | genlayer-js | Intelligent Contract en Bradbury |
 
-**OpenAI (respaldo):**
-1. [platform.openai.com/api-keys](https://platform.openai.com/api-keys) → Create key.
-2. Añade `OPENAI_API_KEY=sk-...` en `.env`.
+### Qué se implementó correctamente
+
+1. **Avalanche Glacier API**: Integración completa; transacciones, ERC-20, método de llamada; soporte C-Chain y Fuji.
+2. **GenLayer**: Contrato desplegado; consenso optimista; fallback a proveedores centralizados si falla.
+3. **x402**: Backend con middleware de pago; frontend con cliente x402; pago USDC en Avalanche.
+4. **Detección de scam**: Heurísticas (cirílico, transferencias sin valor); clasificación por tipo; documentado en SCAM_DETECTION.md.
+5. **Dashboard financiero**: Ingresos/gastos en el tiempo; gas en el tiempo; tipo de cuenta destino (DEX, Bridge, Wallet, Contrato).
+6. **Export PDF**: Reporte descargable con clasificación, narrativa y transacciones.
+7. **Wallet connect**: MetaMask y injected; uso de useConnectors (wagmi v3).
+
+---
+
+## Stack (resumen)
+
+| Capa | Tecnología |
+|------|------------|
+| Frontend | React 19 + Vite + TypeScript + Tailwind + wagmi + Recharts |
+| Backend | Node.js + Express + ES Modules + Vercel Serverless |
+| L1 Datos | Avalanche Glacier API (C-Chain + Ethereum) |
+| IA | Hugging Face → OpenAI → GenLayer (fallback) |
+| Wallet | MetaMask / Core (Avalanche + Ethereum) |
+| Pagos API | x402 + PayAI facilitator (Avalanche Fuji / C-Chain) |
+
+### Built for Avalanche
+
+Prisma usa **Glacier** para datos, **Avalanche C-Chain / Fuji** para análisis, y **x402** para cobro opcional en USDC. Ver [X402.md](./X402.md) y [GENLAYER.md](./GENLAYER.md).
+
+---
+
+## Variables de entorno
+
+| Variable | Obligatoria | Uso |
+|----------|-------------|-----|
+| `GLACIER_API_KEY` | Sí | [AvaCloud](https://app.avacloud.io/) — transacciones on-chain |
+| `HUGGINGFACE_API_KEY` o `OPENAI_API_KEY` | Sí | IA para clasificación |
+| `GENLAYER_PRIVATE_KEY` | GenLayer | Deploy y llamadas al contrato |
+| `GENLAYER_CONTRACT_ADDRESS` | GenLayer | Dirección del contrato |
+| `X402_ENABLED`, `X402_PAY_TO`, `X402_NETWORK` | x402 | Cobro por API en USDC |
+| `AVAX_USD_PRICE` | No | Precio AVAX para cálculos USD |
 
 ---
 
 ## Desarrollo local
 
-### 1. Configurar variables de entorno
-
 ```bash
-cp .env.example .env
-# Edita .env con:
-#   GLACIER_API_KEY     (obligatoria)
-#   HUGGINGFACE_API_KEY (o OPENAI_API_KEY)
+# Backend
+npm install && npm run dev   # http://localhost:3001
+
+# Frontend
+cd ledgerlens-front && npm install && npm run dev   # http://localhost:5173
 ```
-
-### 2. Backend
-
-```bash
-npm install
-npm run dev
-```
-
-API en `http://localhost:3001`.
-
-### 3. Frontend
-
-```bash
-cd ledgerlens-front && npm install && npm run dev
-```
-
-Frontend en `http://localhost:5173`. En desarrollo usa `http://localhost:3001` para la API.
 
 ---
 
-## Despliegue en Vercel
+## Despliegue (Vercel)
 
-### 1. Subir a GitHub
-
-```bash
-cd ledgerlens-backend
-git init
-git add .
-git commit -m "feat: LedgerLens MVP - Aleph Hackathon"
-git branch -M main
-git remote add origin https://github.com/TU_USUARIO/ledgerlens.git
-git push -u origin main
-```
-
-(Crea primero el repo vacío en GitHub.)
-
-### 2. Conectar en Vercel
-
-1. Entra a **[vercel.com](https://vercel.com)** e inicia sesión.
-2. **Add New Project** → Importa tu repo de GitHub.
-3. Vercel detectará la estructura:
-   - **Root Directory**: dejar vacío (raíz del repo).
-   - **Build Command**: `cd ledgerlens-front && npm install && npm run build`
-   - **Output Directory**: `ledgerlens-front/dist`
-
-4. En **Environment Variables** añade:
-   - `GLACIER_API_KEY` (obligatoria)
-   - `HUGGINGFACE_API_KEY` o `OPENAI_API_KEY` (al menos una)
-   - `AVAX_USD_PRICE` = `35` (opcional)
-
-5. Deploy.
-
-La app quedará en `https://tu-proyecto.vercel.app`.  
-El frontend y la API (`/api/analyze/:address`) comparten el mismo dominio.
+1. Conecta el repo de GitHub a Vercel.
+2. **Build Command:** `cd ledgerlens-front && npm install && npm run build`
+3. **Output Directory:** `ledgerlens-front/dist`
+4. Añade las variables de entorno requeridas.
 
 ---
 
@@ -123,62 +101,7 @@ El frontend y la API (`/api/analyze/:address`) comparten el mismo dominio.
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | GET | `/health` | Estado del servicio |
-| GET | `/api/analyze/:address` | Analiza billetera (dirección EVM 0x...) |
-
-### Formato de respuesta
-
-```json
-{
-  "identity": "Verified Human User | High-Frequency Trading Bot | Smart Contract Service",
-  "risk_score": 0,
-  "narrative": "…",
-  "chain": "avalanche",
-  "transactions": [
-    { "id": "0x...", "time": "…", "action": "Swap|Transfer|Approve|Bridge", "counterparty": "…", "gas_usd": 1.23, "value_native": 0.5, "value_usd": 17.5, "native_symbol": "AVAX" }
-  ],
-  "gas_efficiency": [ { "label": "20 mar 15:30", "time": "2025-03-20T15:30:00Z", "gas_usd": 0.12, "tx_count": 1, "action": "Swap" } ]
-}
-```
-
-**Query:** `?chain=avalanche` | `?chain=ethereum`
-
----
-
-## Wallet (MetaMask / Core)
-
-- Conecta wallet → la dirección se rellena automáticamente.
-- Selector Avalanche / Ethereum → cambia la red en la wallet si hace falta.
-- Balance visible en header cuando conectado.
-- Ver [WALLET.md](./ledgerlens-front/WALLET.md) para detalles.
-
----
-
-## GenLayer (IA descentralizada)
-
-Para usar el consenso LLM de GenLayer en lugar de OpenAI:
-
-1. Despliega el contrato: `npm run deploy:genlayer` (requiere `GENLAYER_PRIVATE_KEY`).
-2. Añade `GENLAYER_CONTRACT_ADDRESS` al `.env`.
-3. El backend usará GenLayer automáticamente; si falla, hace fallback a OpenAI.
-
-Ver [GENLAYER.md](./GENLAYER.md) para la guía completa.
-
----
-
-## Arquitectura
-
-```
-Frontend (React)  →  GET /api/analyze/:address
-                            ↓
-                    analyze.controller
-                            ↓
-        ┌───────────────────┼───────────────────┐
-        ↓                   ↓                   ↓
-  avalanche.service   aggregator.service   ai.service
-  (Glacier API)       (mapea formato)      (OpenAI → GenLayer mañana)
-```
-
-Módulos pensados para poder sustituir el servicio de IA por GenLayer sin romper el flujo.
+| GET | `/api/analyze/:address` | Analiza billetera (?chain=avalanche\|fuji\|ethereum) |
 
 ---
 

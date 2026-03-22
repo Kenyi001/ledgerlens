@@ -1,6 +1,6 @@
-# GenLayer - LedgerLens Integration
+# GenLayer - Prisma Integration
 
-LedgerLens usa GenLayer para el análisis IA descentralizado (Humano vs Bot) mediante Intelligent Contracts y consenso LLM.
+Prisma usa GenLayer para el análisis IA descentralizado (Humano vs Bot) mediante Intelligent Contracts y consenso LLM.
 
 ## Arquitectura
 

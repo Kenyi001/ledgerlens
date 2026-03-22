@@ -34,7 +34,7 @@ export function createApp() {
   }
 
   app.get("/health", (_, res) => {
-    res.json({ status: "ok", service: "ledgerlens-backend" });
+    res.json({ status: "ok", service: "prisma-backend" });
   });
 
   app.get("/api/analyze/:address", analyzeAddress);

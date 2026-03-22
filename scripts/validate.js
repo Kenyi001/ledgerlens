@@ -40,7 +40,7 @@ async function httpGet(url) {
 }
 
 async function run() {
-  console.log("\n🔍 LedgerLens — Validación del desarrollo\n");
+  console.log("\n🔍 Prisma — Validación del desarrollo\n");
   console.log("Base URL:", BASE_URL);
   console.log("");
 

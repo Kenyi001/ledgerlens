@@ -97,6 +97,16 @@ function deriveActionLabel(raw, chain) {
   return "On-chain";
 }
 
+/** Tipo de cuenta destino: wallet (persona/EOA), DEX, bridge o contrato genérico. */
+function deriveCounterpartyType(action) {
+  const a = String(action || "").toLowerCase();
+  if (a.includes("dex") || a.includes("router")) return "dex";
+  if (a.includes("bridge")) return "bridge";
+  if (a.includes("approve")) return "contract";
+  if (a.includes("contract") || a.includes("on-chain")) return "contract";
+  return "wallet";
+}
+
 /**
  * Entrada/salida respecto a la wallet analizada (como en Core: enviado / recibido).
  */
@@ -165,6 +175,8 @@ export function processRawTransactions(rawTxArray, opts = {}) {
     const scamReason = hasCyrillicToken ? "cyrillic_token" : hasCyrillicAction ? "cyrillic_action" : isZeroValueSpam ? "zero_value" : null;
     const isScam = !!scamReason;
     const gasPaidByMe = (raw.from || "").toLowerCase() === walletLower;
+    const counterpartyType = deriveCounterpartyType(action);
+    const usdValue = values.valueUsd ?? 0;
 
     formattedTransactions.push({
       id: raw.hash || `tx-${txIndex}`,
@@ -182,6 +194,8 @@ export function processRawTransactions(rawTxArray, opts = {}) {
       is_scam: isScam,
       scam_reason: scamReason,
       gas_paid_by_me: gasPaidByMe,
+      counterparty_type: counterpartyType,
+      flow_usd: roundUsd(usdValue),
     });
 
     if (!isScam) {
@@ -209,12 +223,14 @@ export function processRawTransactions(rawTxArray, opts = {}) {
     chain
   );
   const gasEfficiency = buildGasEfficiency(formattedTransactions);
+  const moneyFlow = buildMoneyFlow(formattedTransactions);
   const interactionBreakdown = buildInteractionBreakdown(actionCount);
 
   return {
     formattedTransactions,
     statisticalSummary,
     gasEfficiency,
+    money_flow: moneyFlow,
     interaction_breakdown: interactionBreakdown,
     wallet_summary: {
       total_received_usd: roundUsd(totalReceivedUsd),
@@ -403,5 +419,54 @@ function buildGasEfficiency(formattedTransactions) {
     time: v.time,
     gas_usd: roundUsd(v.totalGas),
     tx_count: v.count,
+  }));
+}
+
+/** Ingresos y gastos (USD) a lo largo del tiempo. Excluye scam. */
+function buildMoneyFlow(formattedTransactions) {
+  const valid = formattedTransactions
+    .filter((tx) => !tx.is_scam && (tx.flow_usd ?? 0) !== 0)
+    .map((tx) => {
+      const d = new Date(tx.time);
+      const usd = tx.flow_usd ?? 0;
+      const income = tx.flow === "in" ? usd : 0;
+      const expense = tx.flow === "out" ? usd : 0;
+      return {
+        time: tx.time,
+        timestamp: d.getTime(),
+        label: d.toLocaleDateString("es-CL", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
+        income_usd: roundUsd(income),
+        expense_usd: roundUsd(expense),
+      };
+    })
+    .sort((a, b) => a.timestamp - b.timestamp);
+
+  if (valid.length === 0) {
+    return [{ label: "Sin datos", time: "", income_usd: 0, expense_usd: 0 }];
+  }
+
+  const maxPoints = 40;
+  if (valid.length <= maxPoints) {
+    return valid.map((v) => ({
+      label: v.label,
+      time: v.time,
+      income_usd: v.income_usd,
+      expense_usd: v.expense_usd,
+    }));
+  }
+
+  const byDay = new Map();
+  for (const v of valid) {
+    const dayKey = v.time.slice(0, 10);
+    const cur = byDay.get(dayKey) ?? { income: 0, expense: 0, time: v.time };
+    cur.income += v.income_usd;
+    cur.expense += v.expense_usd;
+    byDay.set(dayKey, cur);
+  }
+  return Array.from(byDay.entries()).map(([day, v]) => ({
+    label: new Date(day + "Z").toLocaleDateString("es-CL", { day: "2-digit", month: "short", year: "2-digit" }),
+    time: v.time,
+    income_usd: roundUsd(v.income),
+    expense_usd: roundUsd(v.expense),
   }));
 }

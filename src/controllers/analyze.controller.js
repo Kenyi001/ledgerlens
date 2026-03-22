@@ -56,6 +56,7 @@ export async function analyzeAddress(req, res) {
       formattedTransactions,
       statisticalSummary,
       gasEfficiency,
+      money_flow,
       interaction_breakdown,
       wallet_summary
     } = processRawTransactions(rawTxs, {
@@ -75,6 +76,7 @@ export async function analyzeAddress(req, res) {
       chain: requestedChain,
       transactions: formattedTransactions,
       gas_efficiency: gasEfficiency,
+      money_flow: money_flow ?? [],
       interaction_breakdown: interaction_breakdown ?? [],
       wallet_summary: {
         ...wallet_summary,
