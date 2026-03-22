@@ -93,6 +93,39 @@ GENLAYER_PRIVATE_KEY=0x...
 - Si `GENLAYER_CONTRACT_ADDRESS` y `GENLAYER_PRIVATE_KEY` están definidos → se usa GenLayer.
 - Si falla GenLayer o no está configurado → se usa OpenAI.
 
+## Cómo funciona la validación (prompt → LLM)
+
+### Flujo del prompt
+
+1. **Backend** recibe una wallet → Glacier (txs) → Agregador genera un `statistical_summary` (texto).
+2. **Backend** llama al contrato: `analyze_wallet(statistical_summary)`.
+3. **Contrato** construye el prompt completo:
+   - Instrucciones fijas: *"Eres un auditor experto de blockchain..."*
+   - + el `statistical_summary` que recibe.
+4. **Contrato** envía el prompt al LLM (GenLayer): `gl.nondet.exec_prompt(prompt, response_format="json")`.
+5. **LLM** devuelve JSON: `{ identity, risk_score, narrative }`.
+6. **Contrato** valida el JSON y lo guarda en estado.
+7. **Backend** lee `get_last_verdict()` y devuelve el resultado al frontend.
+
+### Verificación (`npm run verify:genlayer`)
+
+El script usa un resumen de prueba fijo:
+
+```
+"Total txs: 5. Promedio por día: 2. DEX swaps: 3. Transfers: 2. Gas USD total: 0.5."
+```
+
+Ese texto se envía como argumento a `analyze_wallet()`. El contrato lo añade al prompt y el LLM devuelve el veredicto. Así se comprueba que:
+
+- La conexión a StudioNet funciona.
+- El contrato acepta escrituras.
+- El LLM responde correctamente.
+- La lectura de `get_last_verdict` devuelve el JSON esperado.
+
+### En la API real (`/api/analyze/:address`)
+
+El `statistical_summary` es generado por el agregador a partir de las transacciones reales (contadores, gas, acciones, etc.).
+
 ## Validación del contrato
 
 ### Esquema

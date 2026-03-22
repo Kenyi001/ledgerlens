@@ -44,13 +44,24 @@
 
 ---
 
+## Requisitos GenLayer (track Aleph + hackathon oficial)
+
+Ver **[HACKATHON_GENLAYER_REQS.md](./HACKATHON_GENLAYER_REQS.md)** para cumplimiento de:
+- Consenso optimista de la democracia ✅
+- Principio de equivalencia ✅
+- Despliegue en Bradbury ⚠️ (actual: StudioNet; migrar cuando faucet funcione)
+- Submission en ambos hackathons
+
+---
+
 ## Herramientas y datos del hackathon
 
 | Recurso | LedgerLens | Link |
 |---------|------------|------|
 | Avalanche Glacier API | ✅ Datos de txs | [AvaCloud](https://app.avacloud.io/) |
 | Avalanche C-Chain | ✅ Chain 43114 | [build.avax.network](https://build.avax.network/) |
-| GenLayer Testnet Bradbury | ✅ IA on-chain | [portal.genlayer.foundation](https://portal.genlayer.foundation/) |
+| GenLayer StudioNet | ✅ IA on-chain (actual) | [studio.genlayer.com](https://studio.genlayer.com) |
+| GenLayer Testnet Bradbury | ⚠️ Pendiente faucet | [portal.genlayer.foundation](https://portal.genlayer.foundation/) |
 | x402 (HTTP payment) | ❌ No implementado | [Workshop](https://x.com/alephhackathon/status/2034729201560096780) |
 
 ---

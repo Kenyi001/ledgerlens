@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Despliega el contrato WalletAnalyzer en GenLayer StudioNet (sin tokens).
- * Si prefieres Bradbury: cambia studionet por testnetBradbury (requiere GEN del faucet).
+ * Para Bradbury: cambia studionet por testnetBradbury + obtén GEN del faucet.
  * Uso: GENLAYER_PRIVATE_KEY=0x... node scripts/deploy-genlayer.js
  */
 
