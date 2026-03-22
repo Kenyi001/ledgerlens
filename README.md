@@ -12,7 +12,7 @@
 |---------|-----|
 | **Repositorio** | [github.com/Kenyi001/ledgerlens](https://github.com/Kenyi001/ledgerlens) |
 | **Live Demo (Vercel)** | [ledgerlens-backend.vercel.app](https://ledgerlens-backend.vercel.app) |
-| **Documentación** | [HACKATHON.md](./HACKATHON.md) · [X402.md](./X402.md) · [GENLAYER.md](./GENLAYER.md) · [CHECKLIST.md](./CHECKLIST.md) |
+| **Guía de pruebas y demo** | [PRUEBAS.md](./PRUEBAS.md) |
 
 ---
 
@@ -94,7 +94,9 @@ Si `X402_ENABLED` no está en `true` en el backend, el análisis es gratuito y n
 | `GENLAYER_CONTRACT_ADDRESS` | GenLayer | Dirección del contrato |
 | `X402_ENABLED`, `X402_PAY_TO`, `X402_NETWORK` | x402 | Cobro por API en USDC |
 | `AVAX_USD_PRICE` | No | Precio AVAX para cálculos USD |
+| `ETH_RPC_URL` | No | RPC Ethereum (default: https://eth.llamarpc.com) |
 | `VITE_X402_NETWORK` | Frontend | Red de pago (`fuji` o `mainnet`) |
+| `VITE_X402_ENABLED` | Frontend | `true` solo si el backend tiene x402 activo |
 
 ---
 

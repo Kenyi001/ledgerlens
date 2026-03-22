@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button"
 import { useAnalysisStore } from "@/features/analysis/store/useAnalysisStore"
 import { useRunAnalysis } from "@/features/analysis/hooks/useRunAnalysis"
 import type { SupportedChain } from "@/lib/api"
-import { chainIdForApp } from "@/wagmi"
 
 export function Header() {
   const [input, setInput] = useState("")
@@ -29,7 +28,7 @@ export function Header() {
   const { mutate: connect, isPending: isConnecting, error: connectError, reset: resetConnect } = useConnect()
   const { mutateAsync: disconnectAsync, isPending: isDisconnecting } =
     useDisconnect()
-  const { switchChainAsync, isPending: isSwitching } = useSwitchChain()
+  const { isPending: isSwitching } = useSwitchChain()
 
   useEffect(() => {
     if (address) setInput(address)
@@ -61,11 +60,8 @@ export function Header() {
 
   const handleChainSelect = (value: SupportedChain) => {
     setChain(value)
-    if (!connected) return
-    const chainId = chainIdForApp[value]
-    switchChainAsync({ chainId }).catch(() => {
-      /* usuario rechazó o red no añadida */
-    })
+    /* No cambiar la wallet: el selector define qué red analizar (Glacier),
+       no la red de la wallet. La wallet solo se usa para x402 y "Analizar mi wallet". */
   }
 
   const shortAddress = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`

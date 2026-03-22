@@ -81,7 +81,7 @@ export async function fetchNativeBalance(address, chain = "avalanche") {
   const rpcUrls = {
     avalanche: "https://api.avax.network/ext/bc/C/rpc",
     fuji: "https://api.avax-test.network/ext/bc/C/rpc",
-    ethereum: "https://cloudflare-eth.com"
+    ethereum: process.env.ETH_RPC_URL || "https://eth.llamarpc.com"
   };
   const url = rpcUrls[chain] || rpcUrls.avalanche;
   

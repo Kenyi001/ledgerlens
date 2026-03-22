@@ -6,7 +6,7 @@
  */
 
 const BASE_URL = process.env.VALIDATE_URL || "http://localhost:3001";
-const TEST_ADDRESS = "0x8dc08e5055e49b6F9d96aDC4AC277fDe44028367"; // Dirección verificada en VALIDATION.md
+const TEST_ADDRESS = "0x8dc08e5055e49b6F9d96aDC4AC277fDe44028367"; // Dirección de prueba (ver PRUEBAS.md)
 const CHAINS = ["avalanche", "ethereum"];
 const REQUIRED_CHAINS = ["avalanche"]; // Ethereum puede no estar en todos los planes Glacier
 

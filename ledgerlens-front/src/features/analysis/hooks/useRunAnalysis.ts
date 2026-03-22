@@ -25,12 +25,15 @@ export function useRunAnalysis() {
     const trimmed = addr.trim()
     if (!trimmed) return
     if (connected && walletClient) {
-      const payChain = x402PaymentChainId()
-      if (chainId !== payChain) {
-        try {
-          await switchChainAsync({ chainId: payChain })
-        } catch {
-          /* usuario rechazó */
+      const x402Enabled = String(import.meta.env.VITE_X402_ENABLED ?? "false").toLowerCase() === "true"
+      if (x402Enabled) {
+        const payChain = x402PaymentChainId()
+        if (chainId !== payChain) {
+          try {
+            await switchChainAsync({ chainId: payChain })
+          } catch {
+            /* usuario rechazó cambiar de red */
+          }
         }
       }
       await fetchAnalysis(trimmed, walletClient)
