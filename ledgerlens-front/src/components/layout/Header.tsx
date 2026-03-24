@@ -90,15 +90,15 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-white/5 bg-[#131315] font-sans antialiased">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
         <button
           onClick={reset}
           className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80"
         >
-          <Eye className="h-6 w-6 text-indigo-400" />
-          <span className="text-lg font-bold tracking-tight text-slate-100">
-            <span className="text-indigo-400">Prisma</span>
+          <Eye className="h-5 w-5 text-white" />
+          <span className="text-xl font-bold tracking-tighter text-white uppercase font-display">
+            Prisma
           </span>
         </button>
 
