@@ -115,18 +115,18 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
 
   if (transactions.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-6">
-        <h3 className="mb-1 text-lg font-semibold text-slate-100">Actividad</h3>
+      <div className="rounded-xl border border-border bg-card p-6">
+        <h3 className="mb-1 text-lg font-semibold text-foreground">Actividad</h3>
         <p className="text-sm text-slate-500">Sin transacciones recientes.</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-4 sm:p-6">
+    <div className="rounded-xl border border-border bg-card p-4 sm:p-6 transition-colors duration-300">
       <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h3 className="mb-1 text-lg font-semibold tracking-tight text-slate-100">
+          <h3 className="mb-1 text-lg font-semibold tracking-tight text-foreground">
             Actividad
           </h3>
           <p className="text-xs text-slate-600">
@@ -151,7 +151,7 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
             <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
               {g.heading}
             </h4>
-            <ul className="divide-y divide-slate-800/90 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+            <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-muted/10 dark:bg-slate-900/40">
               {g.txs.map((t) => (
                 <ActivityRow key={t.id} tx={t} chain={chain} />
               ))}
@@ -230,9 +230,9 @@ function ActivityRow({ tx, chain }: { tx: Transaction; chain?: string }) {
         <div
           className={cn(
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-            flow === "in" && "bg-emerald-950/60",
-            flow === "out" && "bg-rose-950/50",
-            flow === "neutral" && "bg-slate-800/90"
+            flow === "in" && "bg-emerald-500/10 dark:bg-emerald-900/40",
+            flow === "out" && "bg-rose-500/10 dark:bg-rose-900/40",
+            flow === "neutral" && "bg-muted dark:bg-slate-800/90"
           )}
         >
           {icon}
@@ -243,8 +243,8 @@ function ActivityRow({ tx, chain }: { tx: Transaction; chain?: string }) {
               className={cn(
                 "truncate text-[15px] font-medium leading-snug",
                 tx.is_scam
-                  ? "text-orange-400/80 line-through decoration-orange-500/50"
-                  : "text-slate-100"
+                  ? "text-orange-500/60 line-through decoration-orange-500/50"
+                  : "text-foreground"
               )}
             >
               {title}
@@ -305,7 +305,7 @@ function ActivityRow({ tx, chain }: { tx: Transaction; chain?: string }) {
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300"
+              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted"
               title="Ver en el explorador"
               aria-label="Abrir transacción en el explorador"
             >

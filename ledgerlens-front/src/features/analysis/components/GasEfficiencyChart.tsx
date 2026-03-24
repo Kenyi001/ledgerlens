@@ -34,8 +34,8 @@ export function GasEfficiencyChart({ data, chain = "avalanche" }: GasEfficiencyC
   const symbol = NATIVE_SYMBOL[chain] ?? "AVAX/ETH"
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-6">
-      <h3 className="mb-1 text-sm font-semibold uppercase tracking-wider text-slate-400">
+    <div className="rounded-xl border border-border bg-card p-6">
+      <h3 className="mb-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         Gastos en gas — evolución en el tiempo
       </h3>
       <p className="mb-2 text-xs text-slate-600">
@@ -52,7 +52,7 @@ export function GasEfficiencyChart({ data, chain = "avalanche" }: GasEfficiencyC
       </div>
       <div className="relative h-[260px] w-full">
         {plotData.length === 0 ? (
-          <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-700 bg-slate-900/30 text-sm text-slate-500">
+          <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-sm text-muted-foreground">
             No hay transacciones con gas para mostrar
           </div>
         ) : (
@@ -67,24 +67,24 @@ export function GasEfficiencyChart({ data, chain = "avalanche" }: GasEfficiencyC
                 <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} />
             <XAxis
               dataKey="xKey"
-              stroke="#475569"
-              tick={{ fill: "#94a3b8", fontSize: 9, angle: -35, textAnchor: "end" }}
+              stroke="var(--foreground)"
+              tick={{ fill: "var(--secondary)", fontSize: 9, angle: -35, textAnchor: "end" }}
               interval={plotData.length > 8 ? Math.max(0, Math.floor(plotData.length / 5) - 1) : 0}
             />
             <YAxis
-              stroke="#475569"
-              tick={{ fill: "#94a3b8", fontSize: 12 }}
+              stroke="var(--foreground)"
+              tick={{ fill: "var(--secondary)", fontSize: 12 }}
               tickFormatter={(v: number) => `$${v}`}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#0f172a",
-                border: "1px solid #334155",
+                backgroundColor: "var(--card)",
+                border: "1px solid var(--border)",
                 borderRadius: "8px",
-                color: "#e2e8f0",
+                color: "var(--foreground)",
               }}
               formatter={(value, _name, props) => {
                 const p = props?.payload

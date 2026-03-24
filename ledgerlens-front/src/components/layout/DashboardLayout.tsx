@@ -157,7 +157,7 @@ function EmptyState({
           </h1>
         </div>
         
-        <p className="max-w-2xl text-[10px] sm:text-[11px] leading-relaxed tracking-[0.2em] text-slate-500 font-bold uppercase mx-auto px-4 font-display">
+        <p className="max-w-2xl text-[10px] sm:text-[11px] leading-relaxed tracking-[0.2em] text-muted-foreground font-bold uppercase mx-auto px-4 font-display">
           AI-Driven Intelligence Engine.<br />
           Detect Bots. Assess Risk. Track Capital Flows.
         </p>
@@ -175,7 +175,7 @@ function EmptyState({
           </button>
         )}
         
-        <div className="h-12 inline-flex items-center gap-3 border border-white/10 bg-white/5 px-8 text-[11px] font-black tracking-widest text-slate-500 font-display">
+        <div className="h-12 inline-flex items-center gap-3 border border-border bg-card/50 px-8 text-[11px] font-black tracking-widest text-muted-foreground font-display">
           <Search className="h-4 w-4" />
           PASTE ADDRESS ABOVE TO BEGIN
         </div>
@@ -209,10 +209,10 @@ function WalletStatsSummary({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 rounded-xl border border-slate-800 bg-slate-900/30 p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 rounded-xl border border-border bg-card/60 p-4 shadow-sm backdrop-blur-sm">
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Lo que hay (Balance actual)</span>
-          <span className="text-xl text-slate-200 font-bold">
+          <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Lo que hay (Balance actual)</span>
+          <span className="text-xl text-foreground font-bold">
             {current_balance_native.toFixed(4)} {symbol}
           </span>
         </div>
@@ -228,9 +228,9 @@ function WalletStatsSummary({
             ${total_sent_usd.toFixed(2)}
           </span>
         </div>
-        <div className="flex flex-col gap-1 border-t sm:border-t-0 sm:border-l border-slate-800 sm:pl-4 pt-3 sm:pt-0">
-          <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Gas Gastado (Real)</span>
-          <span className="text-xl text-slate-300 font-bold">
+        <div className="flex flex-col gap-1 border-t sm:border-t-0 sm:border-l border-border sm:pl-4 pt-3 sm:pt-0">
+          <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Gas Gastado (Real)</span>
+          <span className="text-xl text-foreground font-bold">
             ${(total_gas_spent_usd || 0).toFixed(2)}
           </span>
         </div>
@@ -423,11 +423,11 @@ export function DashboardLayout() {
                         <p className="text-[9px] text-slate-500 font-mono">Contract 0x44...901</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded bg-white/5 border-l-2 border-white/20">
-                      <Zap className="h-4 w-4 text-slate-400" />
+                    <div className="flex items-center gap-3 p-3 rounded bg-muted/20 border-l-2 border-border">
+                      <Zap className="h-4 w-4 text-muted-foreground" />
                       <div className="flex-1">
-                        <p className="text-[10px] font-black uppercase text-white">Whale Transfer</p>
-                        <p className="text-[9px] text-slate-500 font-mono">5,000 AVAX -&gt; Coinbase</p>
+                        <p className="text-[10px] font-black uppercase text-foreground">Whale Transfer</p>
+                        <p className="text-[9px] text-muted-foreground font-mono">5,000 AVAX -&gt; Coinbase</p>
                       </div>
                     </div>
                   </div>

@@ -24,8 +24,8 @@ export function MoneyFlowChart({ data }: MoneyFlowChartProps) {
   const totalExpense = chartData.reduce((s, d) => s + (d.expense_usd || 0), 0)
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-6">
-      <h3 className="mb-1 text-sm font-semibold uppercase tracking-wider text-slate-400">
+    <div className="rounded-xl border border-border bg-card p-6">
+      <h3 className="mb-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         Ingresos y gastos en el tiempo
       </h3>
       <p className="mb-2 text-xs text-slate-600">
@@ -41,7 +41,7 @@ export function MoneyFlowChart({ data }: MoneyFlowChartProps) {
       </div>
       <div className="relative h-[260px] w-full">
         {chartData.length === 0 ? (
-          <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-700 bg-slate-900/30 text-sm text-slate-500">
+          <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-sm text-muted-foreground">
             No hay movimientos de dinero para mostrar
           </div>
         ) : (
@@ -60,16 +60,16 @@ export function MoneyFlowChart({ data }: MoneyFlowChartProps) {
                   <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} />
               <XAxis
                 dataKey="label"
-                stroke="#475569"
-                tick={{ fill: "#94a3b8", fontSize: 9, angle: -35, textAnchor: "end" }}
+                stroke="var(--foreground)"
+                tick={{ fill: "var(--secondary)", fontSize: 9, angle: -35, textAnchor: "end" }}
                 interval={chartData.length > 8 ? Math.max(0, Math.floor(chartData.length / 5) - 1) : 0}
               />
               <YAxis
-                stroke="#475569"
-                tick={{ fill: "#94a3b8", fontSize: 12 }}
+                stroke="var(--foreground)"
+                tick={{ fill: "var(--secondary)", fontSize: 12 }}
                 tickFormatter={(v: number) => `$${v}`}
               />
               <Tooltip
@@ -85,10 +85,10 @@ export function MoneyFlowChart({ data }: MoneyFlowChartProps) {
                   const income = Number(row?.income_usd ?? 0)
                   const expense = Number(row?.expense_usd ?? 0)
                   return (
-                    <div className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs shadow-xl">
-                      <p className="mb-2 font-medium text-slate-300">Fecha: {label}</p>
-                      <p className="text-emerald-400">Ingresos: ${income.toFixed(2)} USD</p>
-                      <p className="text-rose-400">Gastos: ${expense.toFixed(2)} USD</p>
+                    <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-xl">
+                      <p className="mb-2 font-medium text-foreground">Fecha: {label}</p>
+                      <p className="text-emerald-500">Ingresos: ${income.toFixed(2)} USD</p>
+                      <p className="text-rose-500">Gastos: ${expense.toFixed(2)} USD</p>
                     </div>
                   )
                 }}
