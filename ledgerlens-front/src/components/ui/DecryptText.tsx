@@ -31,7 +31,7 @@ export function DecryptText({
         setDisplayedText(
           text
             .split("")
-            .map((char, index) => {
+            .map((_char, index) => {
               if (index < iterations) {
                 return text[index]
               }
@@ -45,7 +45,7 @@ export function DecryptText({
           setIsAnimating(false)
         }
 
-        iterations += 1/3 // Slower reveal for better effect
+        iterations += 1 // Much faster reveal (1 char per tick)
       }, speed)
       return () => clearInterval(interval)
     }
