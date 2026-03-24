@@ -5,7 +5,6 @@ import { IdentityBadge } from "@/features/analysis/components/IdentityBadge"
 import { GasEfficiencyChart } from "@/features/analysis/components/GasEfficiencyChart"
 import { MoneyFlowChart } from "@/features/analysis/components/MoneyFlowChart"
 import { TransactionTable } from "@/features/analysis/components/TransactionTable"
-import { Skeleton } from "@/components/ui/skeleton"
 import {
   Download,
   CreditCard,
@@ -388,8 +387,8 @@ export function DashboardLayout() {
             )}
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <div className="md:col-span-1 lg:col-span-1">
-                <IdentityBadge result={analysisResult} />
+              <div className="lg:col-span-2">
+                <IdentityBadge result={analysisResult} address={address || ""} />
               </div>
               <div className="md:col-span-1 lg:col-span-2">
                 <AiNarrativeTerminal
