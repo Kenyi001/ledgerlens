@@ -386,11 +386,11 @@ export function DashboardLayout() {
               </div>
             )}
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <div className="lg:col-span-2">
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-1">
                 <IdentityBadge result={analysisResult} address={address || ""} />
               </div>
-              <div className="md:col-span-1 lg:col-span-2">
+              <div className="lg:col-span-2">
                 <AiNarrativeTerminal
                   result={analysisResult}
                   address={walletAddress}
