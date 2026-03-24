@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Terminal, Cpu, Database } from "lucide-react"
 import type { AnalysisResult } from "@/lib/analysis.types"
+import { DecryptText } from "@/components/ui/DecryptText"
 
 interface AiNarrativeTerminalProps {
   result: AnalysisResult
@@ -70,7 +71,9 @@ export function AiNarrativeTerminal({ result, address }: AiNarrativeTerminalProp
         <div className="space-y-4">
           <div className="flex gap-3">
             <span className="shrink-0 text-emerald-500 font-black tracking-tighter">&gt;</span>
-            <div className="whitespace-pre-wrap">{displayedText}</div>
+            <div className="whitespace-pre-wrap">
+              <DecryptText text={displayedText} speed={10} />
+            </div>
           </div>
           {index < fullText.length && (
             <span className="inline-block h-3 w-1.5 animate-pulse bg-emerald-500/50" />

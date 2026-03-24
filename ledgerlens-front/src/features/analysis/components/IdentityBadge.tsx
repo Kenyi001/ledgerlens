@@ -1,6 +1,7 @@
 import { Bot, User, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { AnalysisResult } from "@/lib/analysis.types"
+import { DecryptText } from "@/components/ui/DecryptText"
 
 interface IdentityBadgeProps {
   result: AnalysisResult
@@ -39,7 +40,7 @@ export function IdentityBadge({ result }: IdentityBadgeProps) {
         <div className="min-w-0 flex-1 space-y-3">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-xl font-bold text-slate-100">
-              {result.identity}
+              <DecryptText text={result.identity} />
             </h2>
             <span
               className={cn(
@@ -83,7 +84,7 @@ export function IdentityBadge({ result }: IdentityBadgeProps) {
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Narrativa IA
               </span>
-              {result.narrative}
+              <DecryptText text={result.narrative} speed={30} delay={400} />
             </p>
             <p className="mt-3 border-t border-slate-800 pt-3 text-xs leading-relaxed text-slate-500">
               <strong className="text-slate-400">Importante:</strong> identidad y

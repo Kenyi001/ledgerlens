@@ -24,19 +24,56 @@ import { AiNarrativeTerminal } from "@/features/analysis/components/AiNarrativeT
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl border border-slate-800 p-6">
-        <div className="flex items-start gap-5">
-          <Skeleton className="h-16 w-16 rounded-full" />
-          <div className="flex-1 space-y-3">
-            <Skeleton className="h-7 w-64" />
-            <Skeleton className="h-3 w-full" />
-            <Skeleton className="h-20 w-full" />
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 animate-pulse">
+      {/* Classified Header */}
+      <div className="flex flex-col items-center gap-2 mb-4">
+        <div className="flex items-center gap-3 px-4 py-1 border border-red-500/20 bg-red-500/5">
+          <AlertTriangle className="h-3 w-3 text-red-500" />
+          <span className="text-[10px] font-black uppercase tracking-[0.4em] text-red-500">
+            RESTRICTED_ACCESS: DECRYPTING_NEURAL_LOGS
+          </span>
+        </div>
+      </div>
+
+      {/* Technical Terminal Box */}
+      <div className="w-full max-w-2xl rounded-xl border border-white/5 bg-black/40 p-8 shadow-2xl backdrop-blur-xl">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              STATUS: ESTABLISHING_SECURE_LINK...
+            </span>
+            <span className="text-[10px] font-mono text-emerald-500">72.4% COMPLETE</span>
+          </div>
+          
+          {/* Simulated Progress Bar */}
+          <div className="h-1.5 w-full bg-white/5 overflow-hidden">
+            <div className="h-full bg-white/40 animate-[loading-bar_2s_infinite]" />
+          </div>
+
+          <div className="space-y-2 font-mono text-[10px] text-slate-400">
+            <div className="flex gap-4">
+              <span className="text-slate-600">[0.001s]</span>
+              <span>&gt; CONNECTING_TO_GLACIER_NODE... OK</span>
+            </div>
+            <div className="flex gap-4">
+              <span className="text-slate-600">[0.045s]</span>
+              <span>&gt; PARSING_BLOCKCHAIN_SEQUENCES... OK</span>
+            </div>
+            <div className="flex gap-4">
+              <span className="text-slate-600">[0.122s]</span>
+              <span>&gt; ANALYZING_IDENTITY_PATTERNS... IN_PROGRESS</span>
+            </div>
+            <div className="flex gap-4 opacity-50">
+              <span className="text-slate-600">[0.211s]</span>
+              <span>&gt; GENERATING_AI_NARRATIVE... PENDING</span>
+            </div>
           </div>
         </div>
       </div>
-      <Skeleton className="h-[320px] rounded-xl" />
-      <Skeleton className="h-[280px] rounded-xl" />
+
+      <div className="text-[9px] font-black text-slate-600 uppercase tracking-tighter">
+        L37-PRISMA-SECURE-ENCLAVE — DO NOT INTERRUPT
+      </div>
     </div>
   )
 }
