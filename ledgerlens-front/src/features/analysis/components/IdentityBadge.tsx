@@ -45,10 +45,10 @@ export function IdentityBadge({ result, address }: IdentityBadgeProps) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl border p-8 transition-all duration-700 bg-card",
+        "relative overflow-hidden rounded-xl border-2 p-8 transition-all duration-700 bg-card",
         isBot
-          ? "border-red-500/30 shadow-[0_0_40px_rgba(239,68,68,0.1)]"
-          : "border-accent/30 shadow-[0_0_40px_rgba(16,185,129,0.1)]"
+          ? "border-red-500/50 shadow-[0_0_40px_rgba(239,68,68,0.1)]"
+          : "border-foreground/10 dark:border-accent/30 shadow-[0_0_40px_rgba(var(--accent-rgb),0.05)]"
       )}
     >
       {/* Background Fingerprint Scan Layer */}
@@ -68,8 +68,8 @@ export function IdentityBadge({ result, address }: IdentityBadgeProps) {
           <div className="absolute inset-0 -m-4 border-t border-accent/40 rounded-full animate-spin-slow-very" />
           
           <div className={cn(
-            "flex h-24 w-24 items-center justify-center rounded-full bg-muted ring-1 ring-border overflow-hidden shadow-inner",
-            isBot ? "shadow-[0_0_20px_rgba(239,68,68,0.2)]" : "shadow-[0_0_20px_rgba(var(--accent-rgb),0.2)]"
+            "flex h-24 w-24 items-center justify-center rounded-full bg-muted dark:bg-black ring-1 ring-foreground/20 dark:ring-accent/40 overflow-hidden shadow-inner",
+            isBot ? "shadow-[0_0_20px_rgba(239,68,68,0.2)]" : "shadow-[0_0_20px_rgba(var(--accent-rgb),0.1)]"
           )}>
             {isBot ? (
               <Bot className="h-12 w-12 text-red-400" />
@@ -78,14 +78,14 @@ export function IdentityBadge({ result, address }: IdentityBadgeProps) {
               <div className="relative flex flex-col items-center">
                 <div className="flex gap-2.5 mb-1.5 mt-2">
                    {/* Left Eye */}
-                   <div className="h-2 w-2 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
+                   <div className="h-2 w-2 rounded-full bg-foreground/10 dark:bg-white/10 flex items-center justify-center overflow-hidden">
                       <div 
                         className="h-1 w-1 rounded-full bg-emerald-400" 
                         style={{ transform: `translate(${mousePos.x}px, ${mousePos.y}px)` }}
                       />
                    </div>
                    {/* Right Eye */}
-                   <div className="h-2 w-2 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
+                   <div className="h-2 w-2 rounded-full bg-foreground/10 dark:bg-white/10 flex items-center justify-center overflow-hidden">
                       <div 
                         className="h-1 w-1 rounded-full bg-emerald-400" 
                         style={{ transform: `translate(${mousePos.x}px, ${mousePos.y}px)` }}
@@ -93,7 +93,7 @@ export function IdentityBadge({ result, address }: IdentityBadgeProps) {
                    </div>
                 </div>
                 {/* Body Shape */}
-                <div className="h-10 w-12 rounded-t-2xl bg-gradient-to-b from-white/20 to-transparent" />
+                <div className="h-10 w-12 rounded-t-2xl bg-gradient-to-b from-foreground/20 to-transparent dark:from-white/20" />
               </div>
             )}
             
