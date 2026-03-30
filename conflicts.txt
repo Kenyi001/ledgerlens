@@ -1,0 +1,6 @@
+
+UU ledgerlens-front/src/components/layout/Header.tsx
+UU ledgerlens-front/src/features/analysis/components/GasEfficiencyChart.tsx
+UU ledgerlens-front/src/features/analysis/components/IdentityBadge.tsx
+UU ledgerlens-front/src/features/analysis/components/MoneyFlowChart.tsx
+

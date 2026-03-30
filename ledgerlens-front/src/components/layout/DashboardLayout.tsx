@@ -5,6 +5,7 @@ import { IdentityBadge } from "@/features/analysis/components/IdentityBadge"
 import { GasEfficiencyChart } from "@/features/analysis/components/GasEfficiencyChart"
 import { MoneyFlowChart } from "@/features/analysis/components/MoneyFlowChart"
 import { TransactionTable } from "@/features/analysis/components/TransactionTable"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Download,
   CreditCard,
@@ -119,7 +120,7 @@ function EmptyState({
         <div className="absolute inset-0 -m-8 border-t border-border rounded-full animate-spin-slow-very pointer-events-none" />
         
         {/* Main Lens Body */}
-        <div className="relative h-20 w-20 flex items-center justify-center rounded-full bg-foreground shadow-[0_0_50px_rgba(var(--accent-rgb),0.1)] overflow-hidden">
+        <div className="relative h-20 w-20 flex items-center justify-center rounded-full bg-slate-900 ring-1 ring-white/10 shadow-[0_0_50px_rgba(99,102,241,0.2)] overflow-hidden">
           {/* Glass Reflection */}
           <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent pointer-events-none opacity-30" />
           
@@ -130,7 +131,7 @@ function EmptyState({
               transition: 'transform 0.1s ease-out'
             }}
           >
-            <Eye className="h-10 w-10 text-background animate-blink" />
+            <Eye className="h-10 w-10 text-white animate-blink opacity-80" />
           </div>
           
           {/* Subtle Scanlines inside lens */}
@@ -138,28 +139,31 @@ function EmptyState({
         </div>
 
         {/* Tactical Crosshairs */}
-        <div className="absolute -top-4 -left-4 w-4 h-4 border-t border-l border-foreground" />
-        <div className="absolute -top-4 -right-4 w-4 h-4 border-t border-r border-foreground" />
-        <div className="absolute -bottom-4 -left-4 w-4 h-4 border-b border-l border-foreground" />
-        <div className="absolute -bottom-4 -right-4 w-4 h-4 border-b border-r border-foreground" />
+        <div className="absolute -top-4 -left-4 w-4 h-4 border-t border-l border-white/20" />
+        <div className="absolute -top-4 -right-4 w-4 h-4 border-t border-r border-white/20" />
+        <div className="absolute -bottom-4 -left-4 w-4 h-4 border-b border-l border-white/20" />
+        <div className="absolute -bottom-4 -right-4 w-4 h-4 border-b border-r border-white/20" />
+      </div>
       </div>
 
       <div className="space-y-6">
         <div className="flex flex-col items-center gap-4">
-          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/40 backdrop-blur-sm">
-            <div className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
-            <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground font-bold font-display">
-              Neural Network Online
+          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm">
+            <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="text-[10px] uppercase tracking-[0.2em] text-slate-300 font-bold">
+              Biometric Access Terminal
             </span>
           </div>
-          <h1 className="text-8xl sm:text-[10rem] font-black text-foreground tracking-prisma relative leading-tight">
+          <h1 className="text-7xl sm:text-9xl font-black text-white tracking-prisma relative py-2">
             PRISMA
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-32 h-0.5 bg-white rounded-full opacity-60" />
           </h1>
         </div>
         
-        <p className="max-w-2xl text-[10px] sm:text-[11px] leading-relaxed tracking-[0.2em] text-muted-foreground font-bold uppercase mx-auto px-4 font-display">
-          AI-Driven Intelligence Engine.<br />
-          Detect Bots. Assess Risk. Track Capital Flows.
+        <p className="max-w-2xl text-[11px] sm:text-xs leading-[1.6] tracking-[0.15em] text-slate-500 font-bold uppercase mx-auto px-4">
+          AI-Driven Intelligence Engine. Detect Bots, Assess Risk,<br />
+          and Track Capital Flows Across EVM Networks.
+        </p>
         </p>
       </div>
 
@@ -168,17 +172,17 @@ function EmptyState({
           <button
             type="button"
             onClick={onAnalyzeMyWallet}
-            className="h-12 inline-flex items-center gap-3 bg-foreground px-8 text-[11px] font-black tracking-widest text-background transition-all hover:opacity-90 active:scale-95 shadow-xl shadow-accent/5 font-display"
+            className="group h-14 inline-flex items-center gap-3 rounded bg-white px-8 text-xs font-black tracking-widest text-slate-950 transition-all hover:bg-slate-200 active:scale-95 shadow-xl shadow-white/5"
           >
-            <Wallet className="h-4 w-4" strokeWidth={3} />
+            <Wallet className="h-4 w-4" />
             SCAN CONNECTED WALLET
           </button>
         )}
         
-        <div className="h-12 inline-flex items-center gap-3 border border-border bg-card/50 px-8 text-[11px] font-black tracking-widest text-muted-foreground font-display">
+        <button className="h-14 inline-flex items-center gap-3 rounded border border-white/5 bg-white/5 px-8 text-xs font-black tracking-widest text-slate-600 transition-all hover:bg-white/10">
           <Search className="h-4 w-4" />
           PASTE ADDRESS ABOVE TO BEGIN
-        </div>
+        </button>
       </div>
     </div>
   )
@@ -265,18 +269,18 @@ export function DashboardLayout() {
     address.toLowerCase() === walletAddress.toLowerCase()
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground relative overflow-hidden font-sans transition-colors duration-300">
+    <div className="flex min-h-screen flex-col bg-slate-950 text-slate-200 relative overflow-hidden">
       {/* Global Scanline Overlay */}
       <div className="absolute inset-0 pointer-events-none z-50 scanline-overlay opacity-[0.03] dark:opacity-[0.02]" />
       
       {/* Biometric Background Layers */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <Fingerprint 
-          className="absolute -bottom-24 -right-24 h-[600px] w-[600px] text-foreground/[0.04] dark:text-accent/10 animate-pulse-slow" 
+          className="absolute -bottom-24 -right-24 h-[600px] w-[600px] text-indigo-500/10 animate-pulse-slow" 
           strokeWidth={0.5}
         />
         <Fingerprint 
-          className="absolute -top-32 -left-32 h-[400px] w-[400px] text-foreground/[0.02] dark:text-accent/5 animate-spin-slow-very" 
+          className="absolute -top-32 -left-32 h-[400px] w-[400px] text-indigo-400/5 animate-spin-slow-very" 
           strokeWidth={0.5}
         />
       </div>
@@ -285,10 +289,17 @@ export function DashboardLayout() {
 
       <main className="flex-1 px-4 py-8 sm:px-6 relative z-10 w-full max-w-[1400px] mx-auto transition-all">
         {/* Terminal Corner Marks (HUD) */}
+<<<<<<< HEAD
         <div className="absolute top-4 left-4 h-8 w-8 border-t border-l border-foreground dark:border-white/20 rounded-tl-lg pointer-events-none" />
         <div className="absolute top-4 right-4 h-8 w-8 border-t border-r border-foreground dark:border-white/20 rounded-tr-lg pointer-events-none" />
         <div className="absolute bottom-4 left-4 h-8 w-8 border-b border-l border-foreground dark:border-white/20 rounded-bl-lg pointer-events-none" />
         <div className="absolute bottom-4 right-4 h-8 w-8 border-b border-r border-foreground dark:border-white/20 rounded-br-lg pointer-events-none" />
+=======
+        <div className="absolute top-4 left-4 h-8 w-8 border-t border-l border-white/20 rounded-tl-lg pointer-events-none" />
+        <div className="absolute top-4 right-4 h-8 w-8 border-t border-r border-white/20 rounded-tr-lg pointer-events-none" />
+        <div className="absolute bottom-4 left-4 h-8 w-8 border-b border-l border-white/20 rounded-bl-lg pointer-events-none" />
+        <div className="absolute bottom-4 right-4 h-8 w-8 border-b border-r border-white/20 rounded-br-lg pointer-events-none" />
+>>>>>>> origin/cambios-victor
 
         {!isLoading && !analysisResult && !error && (
           <EmptyState
@@ -386,11 +397,11 @@ export function DashboardLayout() {
               </div>
             )}
 
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-1">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="md:col-span-1 lg:col-span-1">
                 <IdentityBadge result={analysisResult} address={address || ""} />
               </div>
-              <div className="lg:col-span-2">
+              <div className="md:col-span-1 lg:col-span-2">
                 <AiNarrativeTerminal
                   result={analysisResult}
                   address={walletAddress}
@@ -411,7 +422,11 @@ export function DashboardLayout() {
               </div>
               <div className="min-w-0">
                 {/* Protocol Alerts Placeholder to match image */}
+<<<<<<< HEAD
                 <div className="rounded-xl border border-border bg-card p-6 h-full min-h-[220px]">
+=======
+                <div className="rounded-xl border border-white/5 bg-white/5 p-6 h-full min-h-[220px]">
+>>>>>>> origin/cambios-victor
                   <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-4 block">
                     Protocol Alerts
                   </span>
@@ -423,11 +438,13 @@ export function DashboardLayout() {
                         <p className="text-[9px] text-slate-500 font-mono">Contract 0x44...901</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded bg-muted/20 border-l-2 border-border">
-                      <Zap className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-3 p-3 rounded bg-white/5 border-l-2 border-white/20">
+                      <Zap className="h-4 w-4 text-slate-400" />
                       <div className="flex-1">
-                        <p className="text-[10px] font-black uppercase text-foreground">Whale Transfer</p>
-                        <p className="text-[9px] text-muted-foreground font-mono">5,000 AVAX -&gt; Coinbase</p>
+                        <p className="text-[10px] font-black uppercase text-white">Whale Transfer</p>
+                        <p className="text-[9px] text-slate-500 font-mono">5,000 AVAX -&gt; Coinbase</p>
+                      </div>
+                    </div>
                       </div>
                     </div>
                   </div>
@@ -443,7 +460,7 @@ export function DashboardLayout() {
         )}
       </main>
 
-      <footer className="border-t border-border py-4 px-6 relative z-10">
+      <footer className="border-t border-white/5 py-4 px-6 relative z-10">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 font-mono">
             PRISMA © 2026
