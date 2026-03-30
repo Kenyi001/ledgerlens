@@ -2,10 +2,24 @@
 > ledgerlens-front@0.0.0 build
 > tsc -b && vite build
 
-src/components/layout/DashboardLayout.tsx(8,1): error TS6133: 'Skeleton' is declared but its value is never read.
-src/components/layout/DashboardLayout.tsx(11,3): error TS6133: 'CreditCard' is declared but its value is never read.
-src/components/layout/Header.tsx(2,44): error TS6133: 'LogOut' is declared but its value is never read.
-src/components/layout/Header.tsx(2,52): error TS6133: 'Sun' is declared but its value is never read.
-src/components/layout/Header.tsx(2,57): error TS6133: 'Moon' is declared but its value is never read.
-src/components/layout/Header.tsx(12,1): error TS6133: 'cn' is declared but its value is never read.
-src/context/ThemeContext.tsx(1,58): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+[36mvite v8.0.1 [32mbuilding client environment for production...[36m[39m
+[2K
+transforming...Ô£ô 3461 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                           1.02 kB Ôöé gzip:   0.51 kB
+dist/assets/index-BfOsG5SH.css           49.00 kB Ôöé gzip:   9.03 kB
+dist/assets/ccip-kdAQyMHu.js              2.55 kB Ôöé gzip:   1.21 kB
+dist/assets/utils-DUS54ir-.js             6.78 kB Ôöé gzip:   2.52 kB
+dist/assets/purify.es-COCIDc1i.js        21.03 kB Ôöé gzip:   8.47 kB
+dist/assets/index.es-CnV4P52c.js        151.36 kB Ôöé gzip:  48.87 kB
+dist/assets/html2canvas-d4CNcRZa.js     199.56 kB Ôöé gzip:  46.78 kB
+dist/assets/metamask-sdk-BNBnwRVX.js    541.61 kB Ôöé gzip: 162.50 kB
+dist/assets/index-Rg6BGyQA.js         1,045.34 kB Ôöé gzip: 325.24 kB
+
+[32mÔ£ô built in 1.32s[39m
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.

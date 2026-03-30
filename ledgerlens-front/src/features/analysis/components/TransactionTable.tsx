@@ -87,9 +87,24 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                     <span className="font-mono text-[10px] font-bold text-slate-300">
-                        {t.value_native?.toFixed(4) ?? "0.00"} {t.native_symbol || (chain === "ethereum" ? "ETH" : "AVAX")}
-                     </span>
+                    <div className="flex flex-col gap-0.5">
+                      {t.token_amount && t.token_amount > 0 ? (
+                        <span className="font-mono text-[10px] font-bold text-indigo-400">
+                          {t.token_amount.toFixed(4)} {t.token_symbol}
+                        </span>
+                      ) : t.value_native && t.value_native > 0 ? (
+                        <span className="font-mono text-[10px] font-bold text-emerald-400">
+                          {t.value_native.toFixed(4)} {t.native_symbol || (chain === "ethereum" ? "ETH" : "AVAX")}
+                        </span>
+                      ) : (
+                        <span className="font-mono text-[10px] font-bold text-slate-500">
+                          0.0000 {t.native_symbol || (chain === "ethereum" ? "ETH" : "AVAX")}
+                        </span>
+                      )}
+                      {t.flow_usd && t.flow_usd > 0 ? (
+                        <span className="font-mono text-[9px] text-slate-600">${t.flow_usd.toFixed(2)}</span>
+                      ) : null}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                      <span className="font-mono text-[10px] text-slate-500">

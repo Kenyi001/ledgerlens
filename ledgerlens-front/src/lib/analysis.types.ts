@@ -28,6 +28,8 @@ export interface Transaction {
   scam_reason?: string | null
   /** Tipo de destino: dex | bridge | contract | wallet */
   counterparty_type?: string
+  /** USD estimated for flow value (native + tokens) */
+  flow_usd?: number
 }
 
 export interface GasDataPoint {
