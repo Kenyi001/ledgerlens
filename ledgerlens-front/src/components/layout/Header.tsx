@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { Search, Eye, Wallet, ChevronDown, LogOut, Sun, Moon } from "lucide-react"
+import { Search, Eye, Wallet, ChevronDown } from "lucide-react"
 import {
   useBalance,
   useConnect,
@@ -9,7 +9,6 @@ import {
 } from "wagmi"
 import { useAnalysisStore } from "@/features/analysis/store/useAnalysisStore"
 import { useRunAnalysis } from "@/features/analysis/hooks/useRunAnalysis"
-import { cn } from "@/lib/utils"
 
 export function Header() {
   const [input, setInput] = useState("")
