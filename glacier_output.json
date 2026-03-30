@@ -1,0 +1,28 @@
+{
+  "nativeTransaction": {
+    "chainId": "43114",
+    "blockNumber": "74307429",
+    "blockIndex": 7,
+    "blockHash": "0x8846ce873df2aa10ebcdbde821c5aeea00870a470fc60597edd54744bb8936f1",
+    "txHash": "0x44e61fda47b3166803d24f24d3b744a0c8fb4c8098b30004e2d2f932ee83ea93",
+    "txStatus": "1",
+    "txType": 2,
+    "gasLimit": "1000000",
+    "gasUsed": "93160",
+    "gasPrice": "314236305",
+    "nonce": "38864",
+    "blockTimestamp": 1766525102,
+    "blockTimestampMilliseconds": 1766525102613,
+    "from": {
+      "address": "0x498552077B491E00c6317043C47428885A4f015E"
+    },
+    "to": {
+      "address": "0x9be8A50ae3b71C4740b94Dd81865C06FAa2D8E38"
+    },
+    "method": {
+      "callType": "CONTRACT_CALL",
+      "methodHash": "0x12514bba"
+    },
+    "value": "0"
+  }
+}

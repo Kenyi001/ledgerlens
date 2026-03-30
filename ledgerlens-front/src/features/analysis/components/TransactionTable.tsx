@@ -101,9 +101,14 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
                           0.0000 {t.native_symbol || (chain === "ethereum" ? "ETH" : "AVAX")}
                         </span>
                       )}
-                      {t.flow_usd && t.flow_usd > 0 ? (
-                        <span className="font-mono text-[9px] text-slate-600">${t.flow_usd.toFixed(2)}</span>
-                      ) : null}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                        {t.flow_usd && t.flow_usd > 0 ? (
+                          <span className="font-mono text-[9px] text-slate-400">${t.flow_usd.toFixed(2)} USD</span>
+                        ) : null}
+                        <span className="font-mono text-[8px] text-rose-500/80 font-semibold tracking-wide">
+                          - GAS: {t.gas_usd ? `$${t.gas_usd.toFixed(3)}` : "$0.00"}
+                        </span>
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">

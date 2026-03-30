@@ -1,0 +1,8 @@
+{
+  "identity": "Unknown",
+  "risk_score": 0,
+  "narrative": "No se encontraron transacciones recientes para esta billetera en avalanche. No es posible realizar un análisis de comportamiento.",
+  "chain": "avalanche",
+  "transactions": [],
+  "gas_efficiency": []
+}
