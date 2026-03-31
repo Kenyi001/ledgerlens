@@ -3,10 +3,12 @@ import type { MoneyFlowDataPoint } from "@/lib/analysis.types"
 
 interface MoneyFlowChartProps {
   data: MoneyFlowDataPoint[]
+  realVolume?: number
 }
 
-export function MoneyFlowChart({ data }: MoneyFlowChartProps) {
-  const totalVolume = data.reduce((s, d) => s + (d.income_usd || 0) + (d.expense_usd || 0), 0)
+export function MoneyFlowChart({ data, realVolume }: MoneyFlowChartProps) {
+  const chartVolume = data.reduce((s, d) => s + (d.income_usd || 0) + (d.expense_usd || 0), 0)
+  const totalVolume = realVolume !== undefined ? realVolume : chartVolume;
   
   // Formatear volumen (K, M, etc)
   const formatVol = (val: number) => {
@@ -15,7 +17,7 @@ export function MoneyFlowChart({ data }: MoneyFlowChartProps) {
     return `$${val.toFixed(2)}`
   }
 
-  const volumeStr = totalVolume > 0 ? formatVol(totalVolume) : "$1.2M"
+  const volumeStr = formatVol(totalVolume)
 
   return (
     <div className="group relative overflow-hidden rounded-xl border border-white/5 bg-white/5 p-6 shadow-2xl transition-all hover:bg-white/[0.07] h-full min-h-[220px]">
@@ -27,10 +29,12 @@ export function MoneyFlowChart({ data }: MoneyFlowChartProps) {
         <h2 className="text-5xl font-black tracking-tighter text-white">
           {volumeStr}
         </h2>
-        <div className="flex items-center gap-2 text-emerald-500">
-           <TrendingUp className="h-3 w-3" />
-           <span className="text-[10px] font-bold uppercase tracking-widest">+14.2% FROM PREV</span>
-        </div>
+        {totalVolume > 0 && (
+          <div className="flex items-center gap-2 text-emerald-500">
+             <TrendingUp className="h-3 w-3" />
+             <span className="text-[10px] font-bold uppercase tracking-widest">+ REAL VOLUME</span>
+          </div>
+        )}
       </div>
 
       {/* Bottom Progress/Status Bar */}

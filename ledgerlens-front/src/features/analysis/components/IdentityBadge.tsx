@@ -8,7 +8,6 @@ interface IdentityBadgeProps {
 }
 
 export function IdentityBadge({ result, address }: IdentityBadgeProps) {
-  const isBot = result.identity.toLowerCase().includes("bot")
   
   const riskColor =
     result.risk_score >= 70
@@ -33,7 +32,7 @@ export function IdentityBadge({ result, address }: IdentityBadgeProps) {
                 <Fingerprint className="h-6 w-6 text-slate-400 opacity-50" />
               </div>
               <h2 className="text-2xl font-black uppercase tracking-tight text-white line-clamp-2">
-                STATUS: {isBot ? "SUSPICIOUS" : "VERIFIED HUMAN"}
+                {result.identity || "UNKNOWN_ENTITY"}
               </h2>
             </div>
             {/* GenLayer Proof Tag */}

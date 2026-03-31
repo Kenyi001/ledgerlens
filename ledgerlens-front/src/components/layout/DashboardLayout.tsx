@@ -374,8 +374,15 @@ export function DashboardLayout() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
-              <GasEfficiencyChart data={analysisResult.gas_efficiency ?? []} />
-              <MoneyFlowChart data={analysisResult.money_flow ?? []} />
+              <GasEfficiencyChart 
+                data={analysisResult.gas_efficiency ?? []} 
+                realTotalGas={analysisResult.wallet_summary?.total_gas_spent_usd}
+                txCount={analysisResult.transactions?.length}
+              />
+              <MoneyFlowChart 
+                data={analysisResult.money_flow ?? []} 
+                realVolume={(analysisResult.wallet_summary?.total_received_usd || 0) + (analysisResult.wallet_summary?.total_sent_usd || 0)}
+              />
               
               {/* Protocol Alerts HUD */}
               <ProtocolAlerts transactions={analysisResult.transactions} />
