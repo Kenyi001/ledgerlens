@@ -102,7 +102,7 @@ export function downloadReportPdf(result: AnalysisResult, walletAddress: string)
   }
 
   addText("Transacciones recientes", 12, true)
-  const txs = (result.transactions ?? []).slice(0, 30)
+  const txs = (result.transactions ?? []).slice(0, 150)
   const txRows = txs.map((t) => {
     const date = safeText(t.time?.slice(0, 10))
     const action = safeText(t.action)
@@ -130,10 +130,10 @@ export function downloadReportPdf(result: AnalysisResult, walletAddress: string)
   })
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5
 
-  if ((result.transactions ?? []).length > 30) {
+  if ((result.transactions ?? []).length > 150) {
     doc.setFontSize(8)
     doc.setFont("helvetica", "normal")
-    doc.text(`... y ${result.transactions!.length - 30} transacciones más`, margin, y)
+    doc.text(`... y ${result.transactions!.length - 150} transacciones más`, margin, y)
     y += 6
   }
 

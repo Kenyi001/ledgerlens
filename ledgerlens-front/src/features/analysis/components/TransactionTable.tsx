@@ -69,7 +69,7 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {filtered.slice(0, 15).map((t) => {
+            {filtered.slice(0, 150).map((t) => {
               const isApprove = t.action.toLowerCase().includes("approve")
               
               return (

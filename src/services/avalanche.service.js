@@ -19,7 +19,7 @@ const SUPPORTED_CHAINS = {
   },
 };
 const GLACIER_BASE_URL = "https://glacier-api.avax.network";
-const DEFAULT_PAGE_SIZE = 50;
+const DEFAULT_PAGE_SIZE = 150;
 
 /**
  * Obtiene las últimas transacciones de una dirección en una chain EVM soportada
