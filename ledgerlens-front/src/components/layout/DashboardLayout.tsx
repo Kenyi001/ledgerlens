@@ -21,6 +21,79 @@ import { AiNarrativeTerminal } from "@/features/analysis/components/AiNarrativeT
 import type { AnalysisResult } from "@/lib/analysis.types"
 import { downloadReportPdf } from "@/lib/exportReport"
 
+function ProtocolAlerts({ transactions }: { transactions: AnalysisResult["transactions"] }) {
+  if (!transactions) return null;
+  const alerts = [];
+  
+  const scams = transactions.filter(t => t.is_scam);
+  if (scams.length > 0) {
+    alerts.push({
+      icon: <AlertTriangle className="h-4 w-4 text-red-500" />,
+      title: 'High Risk Activity',
+      desc: `${scams.length} Scam/High-Risk interac. detected`,
+      bg: 'bg-red-500/10 border-red-500'
+    });
+  }
+  
+  const whales = transactions.filter(t => (t.flow_usd && t.flow_usd > 1000) || (t.value_usd && t.value_usd > 1000));
+  whales.slice(0, 2).forEach(w => {
+    alerts.push({
+      icon: <Zap className="h-4 w-4 text-emerald-400" />,
+      title: 'Whale Transfer',
+      desc: `$${(w.flow_usd || w.value_usd || 0).toFixed(0)} moved to/from ${w.counterparty.slice(0, 6)}...`,
+      bg: 'bg-emerald-500/10 border-emerald-500/50'
+    });
+  });
+
+  const highGas = transactions.filter(t => t.gas_usd && t.gas_usd > 5);
+  if (highGas.length > 0) {
+    alerts.push({
+      icon: <AlertTriangle className="h-4 w-4 text-amber-500" />,
+      title: 'Costly Gas Usage',
+      desc: `${highGas.length} Tx with Gas > $5 detected`,
+      bg: 'bg-amber-500/10 border-amber-500'
+    });
+  }
+
+  if (alerts.length === 0) {
+    return (
+      <div className="rounded-xl border border-white/5 bg-white/5 p-6 h-full min-h-[220px]">
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-4 block">
+          Protocol Alerts
+        </span>
+        <div className="flex flex-col items-center justify-center h-24 gap-3">
+            <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">
+               NO ANOMALIES DETECTED
+            </span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-white/5 bg-white/5 p-6 h-full min-h-[220px]">
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+          Protocol Alerts
+        </span>
+        <span className="text-[9px] font-mono text-white/40">{alerts.length} found</span>
+      </div>
+      <div className="space-y-3">
+        {alerts.slice(0, 3).map((a, i) => (
+          <div key={i} className={`flex items-center gap-3 p-3 rounded border-l-2 ${a.bg}`}>
+            {a.icon}
+            <div className="flex-1 overflow-hidden">
+              <p className="text-[10px] font-black uppercase text-white truncate">{a.title}</p>
+              <p className="text-[9px] text-slate-400 font-mono truncate">{a.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LoadingSkeleton() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 animate-pulse" id="loading-skeleton">
@@ -305,27 +378,7 @@ export function DashboardLayout() {
               <MoneyFlowChart data={analysisResult.money_flow ?? []} />
               
               {/* Protocol Alerts HUD */}
-              <div className="rounded-xl border border-white/5 bg-white/5 p-6 h-full min-h-[220px]">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-4 block">
-                  Protocol Alerts
-                </span>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 rounded bg-red-500/10 border-l-2 border-red-500">
-                    <AlertTriangle className="h-4 w-4 text-red-500" />
-                    <div className="flex-1">
-                      <p className="text-[10px] font-black uppercase text-white">High Risk Approval</p>
-                      <p className="text-[9px] text-slate-500 font-mono">Contract 0x44...901</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 rounded bg-white/5 border-l-2 border-white/20">
-                    <Zap className="h-4 w-4 text-slate-400" />
-                    <div className="flex-1">
-                      <p className="text-[10px] font-black uppercase text-white">Whale Transfer</p>
-                      <p className="text-[9px] text-slate-500 font-mono">5,000 AVAX -&gt; Coinbase</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ProtocolAlerts transactions={analysisResult.transactions} />
             </div>
 
             <TransactionTable

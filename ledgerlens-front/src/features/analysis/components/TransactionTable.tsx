@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, User, Bot, Route } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Transaction } from "@/lib/analysis.types"
 
@@ -21,9 +21,12 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
 
   const filtered = useMemo(() => {
     switch (filter) {
-      case "swaps": return transactions.filter(t => t.action.toLowerCase().includes("swap"))
-      case "transfers": return transactions.filter(t => t.action.toLowerCase().includes("transfer"))
-      case "risk": return transactions.filter(t => t.is_scam || (t.flow === "out"))
+      case "swaps": 
+        return transactions.filter(t => t.action.toLowerCase().includes("swap") || t.action.toLowerCase().includes("route"))
+      case "transfers": 
+        return transactions.filter(t => t.action.toLowerCase().includes("transfer") || (t.token_amount && t.token_amount > 0) || (t.value_native && t.value_native > 0 && t.action.toLowerCase() !== "contract call"))
+      case "risk": 
+        return transactions.filter(t => t.is_scam || (t.flow === "out" && ((t.value_native && t.value_native > 100) || (t.flow_usd && t.flow_usd > 1000))))
       default: return transactions
     }
   }, [transactions, filter])
@@ -60,8 +63,8 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
               <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Tx Hash</th>
               <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Method</th>
               <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Value</th>
-              <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Source</th>
-              <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Destination</th>
+              <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Counterparty</th>
+              <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Type</th>
               <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Time</th>
             </tr>
           </thead>
@@ -112,14 +115,29 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                     <span className="font-mono text-[10px] text-slate-500">
-                        {t.counterparty.slice(0, 6)}...{t.counterparty.slice(-4)}
+                     <span className="font-mono text-[10px] text-slate-400">
+                        {t.counterparty ? `${t.counterparty.slice(0, 6)}...${t.counterparty.slice(-4)}` : "Unknown"}
                      </span>
                   </td>
                   <td className="px-6 py-4">
-                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                        {t.counterparty_type || "Unknown Contract"}
-                     </span>
+                     <div className="flex items-center gap-1.5">
+                       {t.counterparty_type === "wallet" || t.counterparty_type === "user" ? (
+                         <>
+                           <User className="h-3 w-3 text-emerald-400" />
+                           <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-tighter">Usuario</span>
+                         </>
+                       ) : t.counterparty_type === "dex" || t.counterparty_type === "router" ? (
+                         <>
+                           <Route className="h-3 w-3 text-amber-400" />
+                           <span className="text-[10px] font-bold text-amber-400 uppercase tracking-tighter">DEX/Router</span>
+                         </>
+                       ) : (
+                         <>
+                           <Bot className="h-3 w-3 text-indigo-400" />
+                           <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-tighter">{t.counterparty_type || "Contract"}</span>
+                         </>
+                       )}
+                     </div>
                   </td>
                   <td className="px-6 py-4">
                      <div className="flex items-center justify-between">
