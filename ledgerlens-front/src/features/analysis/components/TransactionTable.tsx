@@ -1,5 +1,14 @@
 import { useMemo, useState } from "react"
-import { ExternalLink, User, Bot, Route } from "lucide-react"
+import { 
+  ExternalLink, 
+  User, 
+  Bot, 
+  Route, 
+  ShieldCheck, 
+  AlertTriangle, 
+  Flame, 
+  Coins
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Transaction } from "@/lib/analysis.types"
 
@@ -26,7 +35,7 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
       case "transfers": 
         return transactions.filter(t => t.action.toLowerCase().includes("transfer") || (t.token_amount && t.token_amount > 0) || (t.value_native && t.value_native > 0 && t.action.toLowerCase() !== "contract call"))
       case "risk": 
-        return transactions.filter(t => t.is_scam || (t.flow === "out" && ((t.value_native && t.value_native > 100) || (t.flow_usd && t.flow_usd > 1000))))
+        return transactions.filter(t => t.risk_level === "danger" || t.risk_level === "warning" || t.is_scam)
       default: return transactions
     }
   }, [transactions, filter])
@@ -65,12 +74,15 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
               <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Value</th>
               <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Counterparty</th>
               <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Type</th>
-              <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Time</th>
+              <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500 text-center">Threat</th>
+              <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500 text-right">Time</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {filtered.slice(0, 150).map((t) => {
+            {filtered.slice(0, 500).map((t: any) => {
               const isApprove = t.action.toLowerCase().includes("approve")
+              const isDanger = t.risk_level === "danger"
+              const isWarning = t.risk_level === "warning"
               
               return (
                 <tr key={t.id} className="group hover:bg-white/[0.02] transition-colors">
@@ -84,39 +96,47 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
                   <td className="px-6 py-4">
                     <span className={cn(
                       "inline-block px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider",
-                      isApprove ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" : "bg-white/5 text-slate-400 border border-white/5"
+                      isApprove || isDanger ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" : isWarning ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" : "bg-white/5 text-slate-400 border border-white/5"
                     )}>
                       {t.action.split(" ").pop()}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex flex-col gap-0.5">
-                      {t.token_amount && t.token_amount > 0 ? (
-                        <span className="font-mono text-[10px] font-bold text-indigo-400">
-                          {t.token_amount.toFixed(4)} {t.token_symbol}
-                        </span>
-                      ) : t.value_native && t.value_native > 0 ? (
-                        <span className="font-mono text-[10px] font-bold text-emerald-400">
-                          {t.value_native.toFixed(4)} {t.native_symbol || (chain === "ethereum" ? "ETH" : "AVAX")}
-                        </span>
-                      ) : (
+                    <div className="flex flex-col gap-1">
+                      {t.token_amount && t.token_amount > 0 && (
+                        <div className="flex items-center gap-1.5 overflow-hidden">
+                          <span className="font-mono text-[10px] font-bold text-indigo-400 truncate">
+                            {t.token_amount.toFixed(4)} {t.token_symbol}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {t.value_native && t.value_native > 0 ? (
+                        <div className="flex items-center gap-1.5 text-emerald-400/90 overflow-hidden">
+                          <Coins className="h-3 w-3 shrink-0" />
+                          <span className="font-mono text-[10px] font-bold truncate">
+                            {t.value_native.toFixed(6)} {t.native_symbol || (chain === "ethereum" ? "ETH" : "AVAX")}
+                          </span>
+                        </div>
+                      ) : !t.token_amount ? (
                         <span className="font-mono text-[10px] font-bold text-slate-500">
                           0.0000 {t.native_symbol || (chain === "ethereum" ? "ETH" : "AVAX")}
                         </span>
-                      )}
+                      ) : null}
+
                       <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                         {t.flow_usd && t.flow_usd > 0 ? (
-                          <span className="font-mono text-[9px] text-slate-400">${t.flow_usd.toFixed(2)} USD</span>
+                          <span className="font-mono text-[9px] text-slate-400 opacity-80">${t.flow_usd.toFixed(2)} USD</span>
                         ) : null}
-                        <span className="font-mono text-[8px] text-rose-500/80 font-semibold tracking-wide">
-                          - GAS: {t.gas_usd ? `$${t.gas_usd.toFixed(3)}` : "$0.00"}
+                        <span className="font-mono text-[8px] text-rose-500/80 font-bold tracking-tighter uppercase">
+                          Gas: {t.gas_usd ? `$${t.gas_usd.toFixed(3)}` : "$0.00"}
                         </span>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                      <span className="font-mono text-[10px] text-slate-400">
-                        {t.counterparty ? `${t.counterparty.slice(0, 6)}...${t.counterparty.slice(-4)}` : "Unknown"}
+                        {t.counterparty ? (t.counterparty.length > 20 ? `${t.counterparty.slice(0, 8)}...${t.counterparty.slice(-6)}` : t.counterparty) : "Unknown"}
                      </span>
                   </td>
                   <td className="px-6 py-4">
@@ -139,20 +159,35 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
                        )}
                      </div>
                   </td>
-                  <td className="px-6 py-4">
-                     <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-slate-500 italic">
-                          {timeAgo(t.time)}
-                        </span>
-                        <a 
-                          href={`https://snowtrace.io/tx/${t.id}`} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                           <ExternalLink className="h-3 w-3 text-slate-600 hover:text-white" />
-                        </a>
-                     </div>
+                  <td className="px-6 py-4 text-center">
+                    {t.risk_level === "danger" ? (
+                      <div className="flex justify-center" title="ALTO RIESGO: Patrón malicioso">
+                        <Flame className="h-4 w-4 text-rose-500 animate-pulse" />
+                      </div>
+                    ) : t.risk_level === "warning" ? (
+                      <div className="flex justify-center" title="ADVERTENCIA: Interacción sospechosa">
+                        <AlertTriangle className="h-4 w-4 text-amber-500" />
+                      </div>
+                    ) : (
+                      <div className="flex justify-center" title="Seguro">
+                        <ShieldCheck className="h-3.5 w-3.5 text-emerald-500/40" />
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-3">
+                      <span className="text-[10px] text-slate-500 italic">
+                        {timeAgo(t.time)}
+                      </span>
+                      <a 
+                        href={`https://snowtrace.io/tx/${t.id}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                         <ExternalLink className="h-3 w-3 text-slate-600 hover:text-white" />
+                      </a>
+                    </div>
                   </td>
                 </tr>
               )
@@ -162,7 +197,7 @@ export function TransactionTable({ transactions, chain }: TransactionTableProps)
         {filtered.length === 0 && (
           <div className="px-6 py-12 text-center">
             <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-600">
-              No sequence found for current filter
+              No direct sequence match
             </span>
           </div>
         )}

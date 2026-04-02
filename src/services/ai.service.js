@@ -5,9 +5,13 @@
 
 import OpenAI from "openai";
 
-const SYSTEM_PROMPT = `Eres un auditor experto de blockchain. Analiza el siguiente resumen estadístico de transacciones recientes de una billetera (la cantidad exacta viene en el texto; no asumas siempre 50). El desglose de "acciones" son etiquetas derivadas del indexador (p. ej. transfer nativo/ERC-20, "Contract call", "DEX router call", nombres de método): no son juicios de trading; "DEX router call" solo indica un selector típico de router, no que sea necesariamente un intercambio. Si el gas total en USD es 0 o muy bajo, puede deberse a datos incompletos del indexador, no a ausencia real de fees: no etiquetes como bot de alta frecuencia solo por eso; sé prudente y menciona la incertidumbre si los datos son escasos.
+const SYSTEM_PROMPT = `Eres un auditor experto en seguridad de blockchain y detección de phishing. Analiza el siguiente resumen estadístico de transacciones. 
+Tu objetivo es identificar si la billetera muestra comportamiento humano, bot de trading, o es un Smart Contract Service. 
+ESPECIAL ATENCIÓN: Busca patrones de "Billetera Ilegal" o "Phishing/Drainer" (ej. muchas llamadas a 'Approve' sin swaps, métodos tipo 'SecurityUpdate' o 'Claim', o interacciones con contratos de alto riesgo). 
 
-Debes clasificar la billetera en una de estas 3 categorías de 'identity': 'Verified Human User', 'High-Frequency Trading Bot', o 'Smart Contract Service'. Asigna un 'risk_score' del 0 al 100 (100 = alto riesgo de bot/MEV) y una 'narrative' de 2 oraciones basada en el resumen. Devuelve ESTRICTAMENTE JSON sin markdown: { "identity": "...", "risk_score": 0, "narrative": "..." }`;
+Debes clasificar la billetera en una de estas 3 categorías de 'identity': 'Verified Human User', 'High-Frequency Trading Bot', o 'Smart Contract Service'. 
+Si detectas actividad maliciosa, refléjalo en el 'risk_score' (80-100) y usa palabras como "Sospecha de Phishing" o "Interacción con contrato malicioso" en la 'narrative'.
+Devuelve ESTRICTAMENTE JSON sin markdown: { "identity": "...", "risk_score": 0, "narrative": "..." }`;
 
 /**
  * Envía el resumen estadístico a la IA y obtiene el veredicto.
@@ -44,7 +48,10 @@ export async function analyzeWalletBehavior(statisticalSummary) {
   if (process.env.GENLAYER_CONTRACT_ADDRESS && process.env.GENLAYER_PRIVATE_KEY) {
     try {
       const { analyzeWithGenLayer } = await import("./genlayer.service.js");
-      return await analyzeWithGenLayer(statisticalSummary);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Timeout esperado a GenLayer tras 15s")), 15000)
+      );
+      return await Promise.race([analyzeWithGenLayer(statisticalSummary), timeoutPromise]);
     } catch (err) {
       previousFailure = `GenLayer: ${err.message}`;
       console.warn("[ai] GenLayer falló, usando Hugging Face/OpenAI:", err.message);

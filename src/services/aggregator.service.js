@@ -9,6 +9,7 @@ const AVAX_DECIMALS = 18n;
 /** Evita que montos bajos (menos de ~1 céntimo USD) se redondeen a $0.00 en la lista tipo wallet. */
 function roundUsd(usd) {
   if (!Number.isFinite(usd) || usd === 0) return 0;
+  if (usd < 0.0001) return Math.round(usd * 1e8) / 1e8; // Micro-recibos
   if (usd < 0.01) return Math.round(usd * 1e6) / 1e6;
   if (usd < 1) return Math.round(usd * 1e4) / 1e4;
   return Math.round(usd * 100) / 100;
@@ -22,6 +23,16 @@ const DEX_SELECTORS = new Set([
   "0x18cbafe5",
   "0xfb3bdb41",
 ]);
+
+const RISKY_SELECTORS = new Set([
+  "0x095ea7b3", // Approve
+  "0xbaac5300", // Phishing/Drainer related often
+  "0x2e1a7d4d", // Phishing/Withdraw/Drain
+  "0x4296446c", // Phishing/Request
+  "0xa9059cbb", // Phishing if to an unknown contract
+]);
+
+const RISKY_METHODS = ["claim", "securityupdate", "connect", "airdrop", "permit", "emergency", "withdrawall"];
 
 function normalizeCallType(ct) {
   let x = String(ct ?? "").toUpperCase();
@@ -86,6 +97,11 @@ function deriveActionLabel(raw, chain) {
     return `${erc20.symbol} · transfer`;
   }
 
+  const valNative = Number(raw.value ?? 0n) / 1e18;
+  if (valNative > 0 && (callType === "CONTRACT_CALL" || callType === "CALL")) {
+    return `${nativeSym} contract call (${valNative.toFixed(3)})`;
+  }
+
   if (callType === "CONTRACT_CALL" || callType === "CALL") {
     return "Contract call";
   }
@@ -95,6 +111,27 @@ function deriveActionLabel(raw, chain) {
   }
 
   return "On-chain";
+}
+
+function deriveRiskLevel(tx, action) {
+  if (tx.is_scam) return "danger";
+  const a = String(action).toLowerCase();
+  const h = String(tx.methodHash || "").toLowerCase();
+  
+  if (RISKY_METHODS.some(m => a.includes(m)) || RISKY_SELECTORS.has(h)) {
+    return "warning";
+  }
+
+  const valUsd = tx.value_usd || 0;
+  if (valUsd > 1000 && (tx.counterparty_type === "contract" || tx.counterparty_type === "unknown")) {
+    return "warning";
+  }
+
+  if (a.includes("approve") && valUsd === 0) {
+    return "warning"; // Approval risk
+  }
+
+  return "clean";
 }
 
 /** Tipo de cuenta destino: wallet (persona/EOA), DEX, bridge o contrato genérico. */
@@ -178,7 +215,7 @@ export function processRawTransactions(rawTxArray, opts = {}) {
     const counterpartyType = deriveCounterpartyType(action);
     const usdValue = values.valueUsd ?? 0;
 
-    formattedTransactions.push({
+    const txData = {
       id: raw.hash || `tx-${txIndex}`,
       time,
       action,
@@ -196,7 +233,10 @@ export function processRawTransactions(rawTxArray, opts = {}) {
       gas_paid_by_me: gasPaidByMe,
       counterparty_type: counterpartyType,
       flow_usd: roundUsd(usdValue),
-    });
+    };
+
+    txData.risk_level = deriveRiskLevel(txData, action);
+    formattedTransactions.push(txData);
 
     if (!isScam) {
       if (gasPaidByMe) {
@@ -204,9 +244,9 @@ export function processRawTransactions(rawTxArray, opts = {}) {
       }
 
       if (flow === "in") {
-        totalReceivedUsd += (values.valueUsd || 0);
+        totalReceivedUsd += (usdValue || 0);
       } else if (flow === "out") {
-        totalSentUsd += (values.valueUsd || 0);
+        totalSentUsd += (usdValue || 0);
       }
       
       const addr = (raw.to || "unknown").toLowerCase();
@@ -338,7 +378,7 @@ function buildStatisticalSummary(
   const totalTx = rawTxArray.length;
   const totalGasUsd = formattedTransactions.reduce((s, t) => s + t.gas_usd, 0);
   const totalValueUsd = formattedTransactions.reduce((s, t) => s + (t.value_usd ?? 0), 0);
-  const avgGasUsd = totalTx > 0 ? (totalGasUsd / totalTx).toFixed(2) : "0";
+  const avgGasUsd = totalTx > 0 ? (totalGasUsd / totalTx).toFixed(1) : "0";
 
   const topAddresses = [...addressCount.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -360,12 +400,7 @@ function buildStatisticalSummary(
 }
 
 /**
- * Agrupa gas por hora (UTC) usando datos reales de las txs.
- * Solo datos on-chain: sin estimados ni promedios inventados.
- */
-/**
- * Gas por transacción a lo largo del tiempo (orden cronológico).
- * Si hay muchas txs, agrupa por día para legibilidad.
+ * Agrupa gas por transacción a lo largo del tiempo.
  */
 function buildGasEfficiency(formattedTransactions) {
   const txsWithGas = formattedTransactions

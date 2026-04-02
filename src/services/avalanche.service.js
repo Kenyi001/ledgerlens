@@ -19,7 +19,8 @@ const SUPPORTED_CHAINS = {
   },
 };
 const GLACIER_BASE_URL = "https://glacier-api.avax.network";
-const DEFAULT_PAGE_SIZE = 150;
+const DEFAULT_PAGE_SIZE = 100;
+const MAX_PAGES = 5;
 
 /**
  * Obtiene las últimas transacciones de una dirección en una chain EVM soportada
@@ -36,36 +37,37 @@ export async function fetchTransactions(address, chain = "avalanche") {
   }
 
   const normalizedAddress = address.trim().toLowerCase();
-  if (!normalizedAddress.startsWith("0x") || normalizedAddress.length !== 42) {
-    throw new Error("Dirección inválida. Debe ser una dirección EVM (0x + 40 hex).");
-  }
-
   const network = SUPPORTED_CHAINS[chain];
-  if (!network) {
-    throw new Error(
-      `Chain no soportada: ${chain}. Usa una de: ${Object.keys(SUPPORTED_CHAINS).join(", ")}`
-    );
-  }
+  if (!network) throw new Error(`Chain no soportada: ${chain}`);
 
-  const url = `${GLACIER_BASE_URL}/v1/chains/${network.chainId}/addresses/${normalizedAddress}/transactions?pageSize=${DEFAULT_PAGE_SIZE}&sortOrder=desc`;
+  let rawTransactions = [];
+  let nextToken = null;
+  let pagesFetched = 0;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "x-glacier-api-key": apiKey,
-      Accept: "application/json",
-    },
-  });
+  do {
+    const pSize = DEFAULT_PAGE_SIZE.toString();
+    let url = `${GLACIER_BASE_URL}/v1/chains/${network.chainId}/addresses/${normalizedAddress}/transactions?pageSize=${pSize}&sortOrder=desc`;
+    if (nextToken) url += `&pageToken=${nextToken}`;
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(
-      `Glacier API error (${response.status}): ${text || response.statusText}`
-    );
-  }
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "x-glacier-api-key": apiKey,
+        Accept: "application/json",
+      },
+    });
 
-  const data = await response.json();
-  const rawTransactions = data.transactions ?? [];
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Glacier API error (${response.status}): ${text}`);
+    }
+
+    const data = await response.json();
+    const batch = data.transactions ?? [];
+    rawTransactions = rawTransactions.concat(batch);
+    nextToken = data.nextPageToken;
+    pagesFetched++;
+  } while (nextToken && pagesFetched < MAX_PAGES);
 
   return rawTransactions.map((tx) => extractUsefulData(tx, normalizedAddress));
 }

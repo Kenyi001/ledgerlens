@@ -106,7 +106,12 @@ export function downloadReportPdf(result: AnalysisResult, walletAddress: string)
   const txRows = txs.map((t) => {
     const date = safeText(t.time?.slice(0, 10))
     const action = safeText(t.action)
-    const tag = t.is_scam ? "SOSPECHOSO" : safeText(t.counterparty_type)
+    
+    let tag = safeText(t.counterparty_type)
+    if (t.is_scam) tag = "SCAM / Phishing"
+    else if (t.risk_level === "danger") tag = "ALTO RIESGO"
+    else if (t.risk_level === "warning") tag = "SOSPECHOSO"
+
     const gas = `$${(t.gas_usd ?? 0).toFixed(2)}`
     const vol = t.value_usd != null ? `$${t.value_usd.toFixed(2)}` : "-"
     return [date, action, tag, vol, gas]

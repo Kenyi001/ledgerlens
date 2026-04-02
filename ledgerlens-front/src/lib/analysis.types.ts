@@ -30,6 +30,8 @@ export interface Transaction {
   counterparty_type?: string
   /** USD estimated for flow value (native + tokens) */
   flow_usd?: number
+  /** Nivel de riesgo detectado: clean | warning | danger */
+  risk_level?: "clean" | "warning" | "danger"
 }
 
 export interface GasDataPoint {
