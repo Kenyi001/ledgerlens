@@ -1,23 +1,5 @@
-/**
- * Servicio de extracción de transacciones desde Avalanche Glacier API (L1/C-Chain)
- * Documentación: https://developers.avacloud.io/data-api/address-transactions
- */
+import { SUPPORTED_CHAINS } from "./chains.js";
 
-const SUPPORTED_CHAINS = {
-  avalanche: {
-    chainId: "43114",
-    label: "Avalanche C-Chain",
-  },
-  /** Testnet: misma dirección EVM que en mainnet, actividad distinta en cadena. */
-  fuji: {
-    chainId: "43113",
-    label: "Avalanche Fuji",
-  },
-  ethereum: {
-    chainId: "1",
-    label: "Ethereum Mainnet",
-  },
-};
 const GLACIER_BASE_URL = "https://glacier-api.avax.network";
 const DEFAULT_PAGE_SIZE = 100;
 const MAX_PAGES = 5;
@@ -25,20 +7,26 @@ const MAX_PAGES = 5;
 /**
  * Obtiene las últimas transacciones de una dirección en una chain EVM soportada
  * @param {string} address - Dirección de la billetera (0x...)
- * @param {"avalanche"|"ethereum"} chain - Red a consultar en Glacier
- * @returns {Promise<Array>} Array de transacciones crudas
+ * @param {string} chain - Red a consultar
+ * @returns {Promise<Array>} Array de transacciones formateadas
  */
 export async function fetchTransactions(address, chain = "avalanche") {
-  const apiKey = process.env.GLACIER_API_KEY;
-  if (!apiKey) {
-    throw new Error(
-      "GLACIER_API_KEY no configurada. Obtén una key en https://app.avacloud.io/"
-    );
-  }
-
   const normalizedAddress = address.trim().toLowerCase();
   const network = SUPPORTED_CHAINS[chain];
   if (!network) throw new Error(`Chain no soportada: ${chain}`);
+
+  if (network.isGlacier) {
+    return fetchFromGlacier(normalizedAddress, network);
+  } else if (network.apiType === "etherscan") {
+    return fetchFromEtherscan(normalizedAddress, chain);
+  }
+  
+  return [];
+}
+
+async function fetchFromGlacier(address, network) {
+  const apiKey = process.env.GLACIER_API_KEY;
+  if (!apiKey) throw new Error("GLACIER_API_KEY no configurada.");
 
   let rawTransactions = [];
   let nextToken = null;
@@ -46,15 +34,12 @@ export async function fetchTransactions(address, chain = "avalanche") {
 
   do {
     const pSize = DEFAULT_PAGE_SIZE.toString();
-    let url = `${GLACIER_BASE_URL}/v1/chains/${network.chainId}/addresses/${normalizedAddress}/transactions?pageSize=${pSize}&sortOrder=desc`;
+    let url = `${GLACIER_BASE_URL}/v1/chains/${network.chainId}/addresses/${address}/transactions?pageSize=${pSize}&sortOrder=desc`;
     if (nextToken) url += `&pageToken=${nextToken}`;
 
     const response = await fetch(url, {
       method: "GET",
-      headers: {
-        "x-glacier-api-key": apiKey,
-        Accept: "application/json",
-      },
+      headers: { "x-glacier-api-key": apiKey, Accept: "application/json" },
     });
 
     if (!response.ok) {
@@ -69,7 +54,37 @@ export async function fetchTransactions(address, chain = "avalanche") {
     pagesFetched++;
   } while (nextToken && pagesFetched < MAX_PAGES);
 
-  return rawTransactions.map((tx) => extractUsefulData(tx, normalizedAddress));
+  return rawTransactions.map((tx) => extractUsefulData(tx, address));
+}
+
+async function fetchFromEtherscan(address, chain) {
+  const network = SUPPORTED_CHAINS[chain];
+  const envKey = `${chain.toUpperCase()}_API_KEY`;
+  const apiKey = process.env[envKey] || "YourApiKeyToken"; // Etherscan permite llamadas básicas sin key aveces
+
+  const url = `${network.apiUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=${DEFAULT_PAGE_SIZE}&sort=desc&apikey=${apiKey}`;
+
+  const response = await fetch(url);
+  const data = await response.json();
+
+  if (data.status !== "1") {
+    if (data.message === "No transactions found") return [];
+    throw new Error(`Etherscan API error (${chain}): ${data.result || data.message}`);
+  }
+
+  // Mapeamos el formato Etherscan al formato unificado de LedgerLens
+  return data.result.map(tx => ({
+    hash: tx.hash,
+    timestamp: Number(tx.timeStamp),
+    from: tx.from.toLowerCase(),
+    to: tx.to?.toLowerCase(),
+    value: parseBigInt(tx.value),
+    gasUsed: parseBigInt(tx.gasUsed),
+    gasPrice: parseBigInt(tx.gasPrice),
+    cumulativeGasUsed: parseBigInt(tx.cumulativeGasUsed),
+    methodName: tx.functionName || "",
+    primaryErc20: null // TODO: Implementar fetchErc20 para Etherscan si se requiere
+  }));
 }
 
 export function getSupportedChains() {
@@ -80,12 +95,8 @@ export function getSupportedChains() {
  * Obtiene el balance nativo via RPC.
  */
 export async function fetchNativeBalance(address, chain = "avalanche") {
-  const rpcUrls = {
-    avalanche: "https://api.avax.network/ext/bc/C/rpc",
-    fuji: "https://api.avax-test.network/ext/bc/C/rpc",
-    ethereum: process.env.ETH_RPC_URL || "https://eth.llamarpc.com"
-  };
-  const url = rpcUrls[chain] || rpcUrls.avalanche;
+  const network = SUPPORTED_CHAINS[chain] || SUPPORTED_CHAINS.avalanche;
+  const url = network.rpcUrl;
   
   try {
     const res = await fetch(url, {
@@ -101,7 +112,7 @@ export async function fetchNativeBalance(address, chain = "avalanche") {
     const data = await res.json();
     return BigInt(data.result || "0x0");
   } catch (e) {
-    console.error("fetchNativeBalance error:", e);
+    console.error(`fetchNativeBalance error (${chain}):`, e);
     return 0n;
   }
 }
@@ -203,6 +214,7 @@ function extractUsefulData(tx, walletAddressLower) {
     callType: method.callType ?? "UNKNOWN",
     methodHash: method.methodHash ?? "",
     methodName: method.methodName ?? "",
+    status: (native.txStatus ?? native.status) != null ? String(native.txStatus ?? native.status) : null,
     primaryErc20,
   };
 }

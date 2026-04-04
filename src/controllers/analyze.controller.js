@@ -2,7 +2,8 @@
  * Controlador principal: orquesta Avalanche → Agregador → IA y responde al Frontend
  */
 
-import { fetchTransactions, getSupportedChains, fetchNativeBalance } from "../services/avalanche.service.js";
+import { fetchTransactions, fetchNativeBalance } from "../services/avalanche.service.js";
+import { getSupportedChains } from "../services/chains.js";
 import { processRawTransactions } from "../services/aggregator.service.js";
 import { analyzeWalletBehavior } from "../services/ai.service.js";
 
@@ -13,6 +14,8 @@ import { analyzeWalletBehavior } from "../services/ai.service.js";
 export async function analyzeAddress(req, res) {
   const { address } = req.params;
   const requestedChain = String(req.query.chain || "avalanche").toLowerCase();
+  
+  console.log(`[analyze] Starting analysis for ${address} on ${requestedChain}...`);
 
   if (!address || typeof address !== "string") {
     return res.status(400).json({

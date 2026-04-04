@@ -2,7 +2,8 @@
  * Aplicación Express compartida: servidor local y Vercel serverless.
  */
 
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import cors from "cors";
 import { analyzeAddress } from "./controllers/analyze.controller.js";

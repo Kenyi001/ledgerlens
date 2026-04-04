@@ -9,6 +9,8 @@ export function getExplorerTxUrl(
   if (c === "fuji")
     return `https://testnet.snowtrace.io/tx/${txHash}`
   if (c === "ethereum") return `https://etherscan.io/tx/${txHash}`
+  if (c === "polygon") return `https://polygonscan.com/tx/${txHash}`
+  if (c === "bsc") return `https://bscscan.com/tx/${txHash}`
   return null
 }
 
@@ -22,5 +24,7 @@ export function getExplorerAddressUrl(
   if (c === "fuji")
     return `https://testnet.snowtrace.io/address/${address}`
   if (c === "ethereum") return `https://etherscan.io/address/${address}`
+  if (c === "polygon") return `https://polygonscan.com/address/${address}`
+  if (c === "bsc") return `https://bscscan.com/address/${address}`
   return null
 }

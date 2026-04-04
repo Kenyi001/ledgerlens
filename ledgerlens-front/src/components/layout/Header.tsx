@@ -9,6 +9,7 @@ import {
 } from "wagmi"
 import { useAnalysisStore } from "@/features/analysis/store/useAnalysisStore"
 import { useRunAnalysis } from "@/features/analysis/hooks/useRunAnalysis"
+import { ChainSelector } from "@/components/ChainSelector"
 
 export function Header() {
   const [input, setInput] = useState("")
@@ -79,17 +80,21 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-white/5 bg-black/80 backdrop-blur-xl px-6">
       <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4">
         {/* Logo Left */}
-        <button
-          onClick={reset}
-          className="flex shrink-0 items-center gap-3 transition-opacity hover:opacity-80 group"
-        >
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/5 group-hover:bg-white/10 transition-colors">
-            <Eye className="h-4 w-4 text-white" />
-          </div>
-          <span className="text-sm font-black tracking-[0.4em] text-white uppercase font-prisma">
-            PRISMA
-          </span>
-        </button>
+        <div className="flex items-center gap-6">
+          <button
+            onClick={reset}
+            className="flex shrink-0 items-center gap-3 transition-opacity hover:opacity-80 group"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/5 group-hover:bg-white/10 transition-colors">
+              <Eye className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-sm font-black tracking-[0.4em] text-white uppercase font-prisma">
+              PRISMA
+            </span>
+          </button>
+          <div className="h-4 w-[1px] bg-white/10" />
+          <ChainSelector />
+        </div>
 
         {/* Search Center */}
         <div className="flex-1 max-w-xl">

@@ -4,6 +4,8 @@
  * No usamos categorías genéricas tipo “mock”; DEX por selector → “DEX router call”.
  */
 
+import { SUPPORTED_CHAINS } from "./chains.js";
+
 const AVAX_DECIMALS = 18n;
 
 /** Evita que montos bajos (menos de ~1 céntimo USD) se redondeen a $0.00 en la lista tipo wallet. */
@@ -30,9 +32,16 @@ const RISKY_SELECTORS = new Set([
   "0x2e1a7d4d", // Phishing/Withdraw/Drain
   "0x4296446c", // Phishing/Request
   "0xa9059cbb", // Phishing if to an unknown contract
+  "0x5f575529", // multicall suspicious
+  "0xac9630aa", // claimRewards
 ]);
 
-const RISKY_METHODS = ["claim", "securityupdate", "connect", "airdrop", "permit", "emergency", "withdrawall"];
+const RISKY_METHODS = [
+  "claim", "securityupdate", "connect", "airdrop", "permit", 
+  "emergency", "withdrawall", "gift", "voucher", "rewards"
+];
+
+const SCAM_TOKEN_KEYWORDS = ["CLAIM", "REWARD", "GIFT", "VOUCHER", "FREE", "WIN", "AIRDROP", "BONUS"];
 
 function normalizeCallType(ct) {
   let x = String(ct ?? "").toUpperCase();
@@ -51,33 +60,41 @@ function truncateLabel(s, max = 72) {
 function isVagueMethodName(name) {
   const t = String(name || "").trim();
   if (!t) return true;
-  return /^(contract\s*call|unknown|call|contractcall)$/i.test(t);
+  return /^(contract\s*call|unknown|call|contractcall|transfer)$/i.test(t);
 }
 
 /**
  * Texto mostrado en la columna Action: solo inferencia a partir de datos Glacier.
  */
-function deriveActionLabel(raw, chain) {
+function deriveActionLabel(raw, chain, walletLower) {
   const hash = (raw.methodHash || "").toLowerCase();
   const callType = normalizeCallType(raw.callType);
   const methodName = String(raw.methodName || "").trim();
-  const nativeSym = chain === "ethereum" ? "ETH" : "AVAX";
+  const nativeSym = SUPPORTED_CHAINS[chain]?.currency || "AVAX";
   const erc20 = raw.primaryErc20;
+  const flow = deriveFlow(raw, walletLower);
+
+
+  const isOut = flow === "out";
+  const isIn = flow === "in";
+
+  const isFailed = String(raw.status) === "0";
+  const prefix = isFailed ? "[DENIED] " : "";
 
   if (hash === "0xa9059cbb") {
-    return erc20?.symbol ? `${erc20.symbol} · transfer` : "ERC-20 transfer";
+    return `${prefix}${erc20?.symbol ? `${erc20.symbol} · ${isOut ? "send" : isIn ? "receive" : "transfer"}` : "ERC-20 transfer"}`;
   }
   if (hash === "0x23b872dd") {
-    return erc20?.symbol ? `${erc20.symbol} · transfer` : "ERC-721 / token transfer";
+    return `${prefix}${erc20?.symbol ? `${erc20.symbol} · ${isOut ? "send" : isIn ? "receive" : "transfer"}` : "ERC-721 / token transfer"}`;
   }
-  if (hash === "0x095ea7b3") return "Token approve";
+  if (hash === "0x095ea7b3") return `${prefix}Token approve`;
 
-  if (DEX_SELECTORS.has(hash)) return "DEX router call";
+  if (DEX_SELECTORS.has(hash)) return `${prefix}DEX router call`;
 
-  if (hash === "0x04e45aaf" || hash === "0x52aa4b22") return "Bridge call";
+  if (hash === "0x04e45aaf" || hash === "0x52aa4b22") return `${prefix}Bridge call`;
 
   if (callType === "NATIVE_TRANSFER" || methodName === "Native Transfer") {
-    return `${nativeSym} transfer`;
+    return `${prefix}${isOut ? "Sent" : isIn ? "Received" : ""} ${nativeSym}`.trim() || `${prefix}${nativeSym} transfer`;
   }
 
   /**
@@ -86,31 +103,31 @@ function deriveActionLabel(raw, chain) {
    * alineamos con wallets tipo Core (“N USDC …”).
    */
   if (erc20?.symbol && (erc20.amountHuman ?? 0) > 0 && isVagueMethodName(methodName)) {
-    return `${erc20.symbol} · transfer`;
+    return `${prefix}${erc20.symbol} · ${isOut ? "send" : isIn ? "receive" : "transfer"}`;
   }
 
   if (methodName && methodName !== "Native Transfer" && !isVagueMethodName(methodName)) {
-    return truncateLabel(methodName);
+    return prefix + truncateLabel(methodName);
   }
 
   if (erc20?.symbol && (erc20.amountHuman ?? 0) > 0) {
-    return `${erc20.symbol} · transfer`;
+    return `${prefix}${erc20.symbol} · ${isOut ? "send" : isIn ? "receive" : "transfer"}`;
   }
 
   const valNative = Number(raw.value ?? 0n) / 1e18;
   if (valNative > 0 && (callType === "CONTRACT_CALL" || callType === "CALL")) {
-    return `${nativeSym} contract call (${valNative.toFixed(3)})`;
+    return `${prefix}${isOut ? "Sent" : isIn ? "Received" : ""} ${nativeSym} (${valNative.toFixed(3)})`.trim();
   }
 
   if (callType === "CONTRACT_CALL" || callType === "CALL") {
-    return "Contract call";
+    return `${prefix}Contract call`;
   }
 
   if (callType === "TRANSFER") {
-    return `${nativeSym} transfer`;
+    return `${prefix}${isOut ? "Sent" : isIn ? "Received" : ""} ${nativeSym}`.trim();
   }
 
-  return "On-chain";
+  return `${prefix}${isOut ? "Contract Interaction (Out)" : isIn ? "Contract Interaction (In)" : "On-chain"}`;
 }
 
 function deriveRiskLevel(tx, action) {
@@ -119,8 +136,11 @@ function deriveRiskLevel(tx, action) {
   const h = String(tx.methodHash || "").toLowerCase();
   
   if (RISKY_METHODS.some(m => a.includes(m)) || RISKY_SELECTORS.has(h)) {
-    return "warning";
+    // Si falló y es riesgoso, es un ataque bloqueado
+    if (String(tx.status) === "0") return "warning"; 
+    return "danger";
   }
+
 
   const valUsd = tx.value_usd || 0;
   if (valUsd > 1000 && (tx.counterparty_type === "contract" || tx.counterparty_type === "unknown")) {
@@ -176,11 +196,23 @@ function deriveFlow(raw, walletLower) {
 export function processRawTransactions(rawTxArray, opts = {}) {
   const chain = (opts.chain || "avalanche").toLowerCase();
   const walletLower = (opts.walletAddress || "").toLowerCase();
-  const nativeUsdPrice =
-    chain === "ethereum"
-      ? parseFloat(process.env.ETH_USD_PRICE || "3500")
-      : parseFloat(process.env.AVAX_USD_PRICE || "35");
-  const nativeSymbol = chain === "ethereum" ? "ETH" : "AVAX";
+  
+  let nativeUsdPrice = 35;
+  let nativeSymbol = "AVAX";
+
+  if (chain === "ethereum") {
+    nativeUsdPrice = parseFloat(process.env.ETH_USD_PRICE || "3500");
+    nativeSymbol = "ETH";
+  } else if (chain === "polygon") {
+    nativeUsdPrice = parseFloat(process.env.POL_USD_PRICE || "0.70");
+    nativeSymbol = "POL";
+  } else if (chain === "bsc") {
+    nativeUsdPrice = parseFloat(process.env.BNB_USD_PRICE || "600");
+    nativeSymbol = "BNB";
+  } else if (chain === "avalanche" || chain === "fuji") {
+    nativeUsdPrice = parseFloat(process.env.AVAX_USD_PRICE || "35");
+    nativeSymbol = "AVAX";
+  }
   const formattedTransactions = [];
   const addressCount = new Map();
   const actionCount = new Map();
@@ -193,7 +225,8 @@ export function processRawTransactions(rawTxArray, opts = {}) {
 
   for (let txIndex = 0; txIndex < rawTxArray.length; txIndex++) {
     const raw = rawTxArray[txIndex];
-    const action = deriveActionLabel(raw, chain);
+    const action = deriveActionLabel(raw, chain, walletLower);
+
     const counterparty = formatCounterparty(raw);
     const flow = deriveFlow(raw, walletLower);
     const gasUsd = calculateGasUsd(raw, nativeUsdPrice);
@@ -209,7 +242,16 @@ export function processRawTransactions(rawTxArray, opts = {}) {
 
     const hasCyrillicToken = containsCyrillic(values.tokenSymbol);
     const hasCyrillicAction = containsCyrillic(action);
-    const scamReason = hasCyrillicToken ? "cyrillic_token" : hasCyrillicAction ? "cyrillic_action" : isZeroValueSpam ? "zero_value" : null;
+    const isKeywordScam = 
+      SCAM_TOKEN_KEYWORDS.some(k => (values.tokenSymbol || "").toUpperCase().includes(k)) ||
+      SCAM_TOKEN_KEYWORDS.some(k => action.toUpperCase().includes(k));
+
+    let scamReason = null;
+    if (hasCyrillicToken) scamReason = "cyrillic_token";
+    else if (hasCyrillicAction) scamReason = "cyrillic_action";
+    else if (isZeroValueSpam) scamReason = "address_poisoning";
+    else if (isKeywordScam) scamReason = "suspicious_keyword";
+
     const isScam = !!scamReason;
     const gasPaidByMe = (raw.from || "").toLowerCase() === walletLower;
     const counterpartyType = deriveCounterpartyType(action);
@@ -233,7 +275,9 @@ export function processRawTransactions(rawTxArray, opts = {}) {
       gas_paid_by_me: gasPaidByMe,
       counterparty_type: counterpartyType,
       flow_usd: roundUsd(usdValue),
+      status: raw.status,
     };
+
 
     txData.risk_level = deriveRiskLevel(txData, action);
     formattedTransactions.push(txData);
@@ -390,13 +434,9 @@ function buildStatisticalSummary(
     .map(([action, count]) => `${action}: ${count}`)
     .join("; ");
 
-  const chainLabel =
-    chain === "ethereum"
-      ? "Ethereum"
-      : chain === "fuji"
-        ? "Avalanche Fuji (testnet)"
-        : "Avalanche C-Chain (mainnet)";
-  return `Resumen de las últimas ${totalTx} transacciones de una billetera en ${chainLabel}. Total gas gastado: $${totalGasUsd.toFixed(2)} USD. Volumen estimado (AVAX/ETH nativo + ERC-20 con precio del indexador): $${totalValueUsd.toFixed(2)} USD. Gas promedio por tx: $${avgGasUsd} USD. Direcciones más frecuentes: ${topAddresses || "N/A"}. Desglose de acciones: ${actionBreakdown || "N/A"}.`;
+  const chainInfo = SUPPORTED_CHAINS[chain] || SUPPORTED_CHAINS.avalanche;
+  const chainLabel = chainInfo.label;
+  return `Resumen de las últimas ${totalTx} transacciones de una billetera en ${chainLabel}. Total gas gastado: $${totalGasUsd.toFixed(2)} USD. Volumen estimado (${chainInfo.currency} nativo + ERC-20 con precio del indexador): $${totalValueUsd.toFixed(2)} USD. Gas promedio por tx: $${avgGasUsd} USD. Direcciones más frecuentes: ${topAddresses || "N/A"}. Desglose de acciones: ${actionBreakdown || "N/A"}.`;
 }
 
 /**

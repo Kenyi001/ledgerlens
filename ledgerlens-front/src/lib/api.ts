@@ -9,7 +9,7 @@ const API_BASE =
   import.meta.env.VITE_API_URL ??
   (import.meta.env.DEV ? "http://localhost:3001" : "")
 
-export type SupportedChain = "avalanche" | "fuji" | "ethereum"
+export type SupportedChain = "avalanche" | "fuji" | "ethereum" | "polygon" | "bsc"
 
 export class PaymentRequiredError extends Error {
   paymentRequired?: unknown
